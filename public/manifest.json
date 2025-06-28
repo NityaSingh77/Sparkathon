@@ -1,0 +1,17 @@
+{
+  "name": "AI Inventory Redistribution Platform",
+  "short_name": "AI Inventory",
+  "description": "AI-driven inventory redistribution and demand forecasting platform",
+  "theme_color": "#1f2937",
+  "background_color": "#111827",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
