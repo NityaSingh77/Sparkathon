@@ -1,3 +1,4 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState } from 'react';
 import Layout from './components/Layout';
 import StoreMap from './components/StoreMap';
@@ -5,8 +6,10 @@ import AIForecasting from './components/AIForecasting';
 import TransferSuggestions from './components/TransferSuggestions';
 import ImpactDashboard from './components/ImpactDashboard';
 import MobileView from './components/MobileView';
+import Home from './components/Home';
+import Login from './components/login';
 
-function App() {
+function Dashboard() {
   const [activeTab, setActiveTab] = useState('map');
 
   const renderContent = () => {
@@ -30,6 +33,18 @@ function App() {
     <Layout activeTab={activeTab} onTabChange={setActiveTab}>
       {renderContent()}
     </Layout>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </Router>
   );
 }
 
