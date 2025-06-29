@@ -1,8 +1,21 @@
 import React, { useState } from 'react';
-import { MapPin, Package, AlertTriangle,  Users } from 'lucide-react';
+import { MapPin, Package, AlertTriangle, Users } from 'lucide-react';
 import { stores, storeInventories } from '../data/mockData';
 import { Store } from '../types';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useMap } from 'react-leaflet';
+import { useEffect } from 'react';
 
+const MapAutoZoom: React.FC<{ lat: number, lng: number }> = ({ lat, lng }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.flyTo([lat, lng], 12, { duration: 1.5 });
+  }, [lat, lng, map]);
+
+  return null;
+};
 const StoreMap: React.FC = () => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [selectedSku, setSelectedSku] = useState<string>('SKU-001');
@@ -15,7 +28,6 @@ const StoreMap: React.FC = () => {
     const inventory = getStoreInventory(storeId);
     const item = inventory?.items.find(item => item.sku === sku);
     if (!item) return 'unknown';
-    
     if (item.currentStock < item.minThreshold) return 'low';
     if (item.currentStock > item.maxThreshold) return 'high';
     return 'normal';
@@ -23,16 +35,58 @@ const StoreMap: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'low': return 'bg-red-500';
-      case 'high': return 'bg-yellow-500';
-      case 'normal': return 'bg-green-500';
-      default: return 'bg-gray-500';
+      case 'low': return 'red';
+      case 'high': return 'yellow';
+      case 'normal': return 'green';
+      default: return 'gray';
     }
   };
+  type Suggestion = {
+  fromStore: Store;
+  toStore: Store;
+  sku: string;
+  suggestedQty: number;
+  distance: number; // Placeholder, you can compute real distance later
+};
+
+const getSuggestions = (): Suggestion[] => {
+  const donors = stores.filter(store => getStockStatus(store.id, selectedSku) === 'high');
+  const recipients = stores.filter(store => getStockStatus(store.id, selectedSku) === 'low');
+
+  const suggestions: Suggestion[] = [];
+
+  donors.forEach(donor => {
+    recipients.forEach(recipient => {
+      const donorInv = getStoreInventory(donor.id);
+      const recipientInv = getStoreInventory(recipient.id);
+
+      const donorItem = donorInv?.items.find(item => item.sku === selectedSku);
+      const recipientItem = recipientInv?.items.find(item => item.sku === selectedSku);
+
+      if (donorItem && recipientItem) {
+        const surplus = donorItem.currentStock - donorItem.maxThreshold;
+        const needed = recipientItem.minThreshold - recipientItem.currentStock;
+
+        if (surplus > 0 && needed > 0) {
+          suggestions.push({
+            fromStore: donor,
+            toStore: recipient,
+            sku: selectedSku,
+            suggestedQty: Math.min(surplus, needed),
+            distance: 0 // Optional: Calculate real distance if needed
+          });
+        }
+      }
+    });
+  });
+
+  return suggestions;
+};
+
 
   const skuOptions = [
     { value: 'SKU-001', label: 'iPhone 15 Pro Max' },
-    { value: 'SKU-002', label: 'Samsung 65" 4K TV' },
+    { value: 'SKU-002', label: 'Samsung 65\" 4K TV' },
     { value: 'SKU-003', label: 'Nike Air Max Sneakers' },
     { value: 'SKU-004', label: 'KitchenAid Stand Mixer' },
     { value: 'SKU-005', label: 'Organic Baby Formula' }
@@ -40,6 +94,7 @@ const StoreMap: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header & Product Selector */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white">Store Network Map</h2>
@@ -63,62 +118,81 @@ const StoreMap: React.FC = () => {
         {/* Map Visualization */}
         <div className="lg:col-span-2">
           <div className="bg-gray-800 rounded-xl p-6 h-96 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20"></div>
-            <div className="relative h-full">
-              <div className="text-center text-gray-400 mb-4">
-                <MapPin className="w-6 h-6 mx-auto mb-2" />
-                <span className="text-sm">North Texas Region</span>
-              </div>
-              
-              {/* Simulated Map with Store Markers */}
-              <div className="relative h-full">
-                {stores.map((store, index) => {
-                  const status = getStockStatus(store.id, selectedSku);
-                  const inventory = getStoreInventory(store.id);
-                  const item = inventory?.items.find(item => item.sku === selectedSku);
-                  
-                  return (
-                    <div
-                      key={store.id}
-                      className={`absolute cursor-pointer transition-all duration-200 hover:scale-110 ${
-                        selectedStore?.id === store.id ? 'scale-125 z-10' : ''
-                      }`}
-                      style={{
-                        left: `${20 + (index * 15)}%`,
-                        top: `${30 + (index * 10)}%`,
-                      }}
-                      onClick={() => setSelectedStore(store)}
-                    >
-                      <div className="relative">
-                        <div className={`w-4 h-4 rounded-full ${getStatusColor(status)} shadow-lg`}></div>
-                        <div className={`absolute -top-1 -right-1 w-2 h-2 ${getStatusColor(status)} rounded-full animate-pulse`}></div>
-                        {item && (
-                          <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
-                            Stock: {item.currentStock}
-                          </div>
-                        )}
-                      </div>
+            <MapContainer
+            center={[32.7767, -96.7970]}
+            zoom={8}
+            style={{ height: '100%', width: '100%', zIndex: 0, borderRadius: '0.75rem' }}
+            className="h-full w-full z-0 rounded-xl"
+          >
+            <TileLayer
+              attribution='&copy; OpenStreetMap contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+
+            {stores.map((store) => {
+              const status = getStockStatus(store.id, selectedSku);
+              const inventory = getStoreInventory(store.id);
+              const item = inventory?.items.find(item => item.sku === selectedSku);
+
+              const color = status === 'low' ? 'red' : status === 'high' ? 'yellow' : status === 'normal' ? 'green' : 'gray';
+
+              return (
+                <CircleMarker
+                  key={store.id}
+                  center={[store.lat, store.lng]}
+                  pathOptions={{ color }}
+                  radius={10}
+                  eventHandlers={{ click: () => setSelectedStore(store) }}
+                >
+                  <Popup>
+                    <div className="text-sm">
+                      <strong>{store.name}</strong><br />
+                      {store.address}<br />
+                      Stock: {item?.currentStock ?? 'N/A'}
                     </div>
-                  );
-                })}
-              </div>
-              
-              {/* Legend */}
-              <div className="absolute bottom-4 left-4 bg-gray-900/80 rounded-lg p-3">
-                <div className="text-xs text-gray-400 mb-2">Stock Levels</div>
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-xs text-gray-300">Low Stock</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-xs text-gray-300">Normal</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <span className="text-xs text-gray-300">Overstock</span>
-                  </div>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
+
+            {/* Auto Zoom when store selected */}
+            {selectedStore && (
+              <MapAutoZoom lat={selectedStore.lat} lng={selectedStore.lng} />
+            )}
+          </MapContainer>
+          <div className="bg-gray-800 rounded-xl p-6">
+  <h3 className="text-lg font-semibold text-white mb-4">Redistribution Suggestions</h3>
+  {getSuggestions().length > 0 ? (
+    <div className="space-y-3 max-h-40 overflow-y-auto">
+      {getSuggestions().map((sug, idx) => (
+        <div key={idx} className="bg-gray-700 rounded-lg p-3 text-sm text-gray-300">
+          <p><span className="text-white">{sug.suggestedQty} units</span> of <span className="text-blue-400">{sug.sku}</span></p>
+          <p>From: <span className="text-yellow-400">{sug.fromStore.name}</span></p>
+          <p>To: <span className="text-red-400">{sug.toStore.name}</span></p>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <p className="text-gray-400">No redistribution needed for this product.</p>
+  )}
+</div>
+
+
+            {/* Legend */}
+            <div className="absolute bottom-4 left-4 bg-gray-900/80 rounded-lg p-3">
+              <div className="text-xs text-gray-400 mb-2">Stock Levels</div>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-xs text-gray-300">Low Stock</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-xs text-gray-300">Normal</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="text-xs text-gray-300">Overstock</span>
                 </div>
               </div>
             </div>
@@ -135,7 +209,7 @@ const StoreMap: React.FC = () => {
                   <h4 className="font-medium text-white">{selectedStore.name}</h4>
                   <p className="text-sm text-gray-400">{selectedStore.address}</p>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-700 rounded-lg p-3">
                     <div className="flex items-center space-x-2">
@@ -144,7 +218,7 @@ const StoreMap: React.FC = () => {
                     </div>
                     <p className="text-sm font-medium text-white mt-1">{selectedStore.manager}</p>
                   </div>
-                  
+
                   <div className="bg-gray-700 rounded-lg p-3">
                     <div className="flex items-center space-x-2">
                       <Package className="w-4 h-4 text-green-400" />

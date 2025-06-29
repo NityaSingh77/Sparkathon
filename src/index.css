@@ -19,3 +19,4 @@
 html {
   scroll-behavior: smooth;
 }
+@import 'leaflet/dist/leaflet.css';
