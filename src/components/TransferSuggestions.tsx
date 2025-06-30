@@ -70,7 +70,6 @@ const TransferSuggestions: React.FC = () => {
         </div>
       </div>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gray-800 rounded-xl p-6">
           <div className="flex items-center space-x-3">
@@ -121,7 +120,6 @@ const TransferSuggestions: React.FC = () => {
         </div>
       </div>
 
-      {/* Transfer Suggestions List */}
       <div className="space-y-4">
         {filteredSuggestions.map((suggestion) => {
           const isApproved = approvedTransfers.includes(suggestion.id);
@@ -139,7 +137,6 @@ const TransferSuggestions: React.FC = () => {
             >
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <div className="flex-1 space-y-3">
-                  {/* Header */}
                   <div className="flex items-center space-x-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getUrgencyColor(suggestion.urgency)}`}>
                       {getUrgencyIcon(suggestion.urgency)}
@@ -157,7 +154,6 @@ const TransferSuggestions: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Transfer Details */}
                   <div className="flex items-center space-x-4">
                     <div className="text-center">
                       <p className="text-sm font-medium text-white">{getStoreName(suggestion.fromStoreId)}</p>
@@ -170,7 +166,6 @@ const TransferSuggestions: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Product Info */}
                   <div className="bg-gray-700 rounded-lg p-3">
                     <h4 className="font-medium text-white mb-1">{suggestion.productName}</h4>
                     <p className="text-sm text-gray-400 mb-2">{suggestion.reason}</p>
@@ -195,7 +190,6 @@ const TransferSuggestions: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 {isPending && (
                   <div className="flex space-x-3">
                     <button
