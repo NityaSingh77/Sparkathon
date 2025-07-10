@@ -1,10 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // <-- import this
 import { ArrowUpRight } from 'lucide-react';
 import retailLeft from '../assets/retail-left.jpg';
 import warehouseRight from '../assets/warehouse-right.jpg';
-import logo from '../assets/logo.jpg'; // Make sure the path is correct
+import logo from '../assets/logo.jpg';
 
 const LandingPage: React.FC = () => {
+  const navigate = useNavigate(); // <-- initialize navigate
+
+  const handleLogin = () => {
+    navigate('/login'); // <-- your login route
+  };
+
   return (
     <div className="relative min-h-screen grid grid-cols-1 md:grid-cols-[1.2fr_1.0fr] font-inter bg-white">
       
@@ -39,9 +46,13 @@ const LandingPage: React.FC = () => {
 
       {/* Right Side - Title + CTA */}
       <div className="flex flex-col items-start justify-center px-10 py-12 bg-[#043980] text-white space-y-24">
-        <button className="ml-auto mb-4 border-2 border-white px-10 py-2 text-sm rounded-full hover:bg-white hover:text-[#043980] transition">
+        <button
+          onClick={handleLogin}
+          className="ml-auto mb-4 border-2 border-white px-10 py-2 text-sm rounded-full hover:bg-white hover:text-[#043980] transition ease-in-out duration-300"
+        >
           LOGIN
         </button>
+
         <div className="pl-4">
           <h1 className="text-[120px] font-medium leading-[0.9]">
             <span className="block">Retail</span>
@@ -52,7 +63,11 @@ const LandingPage: React.FC = () => {
             <i>Smart Inventory Redistribution Network</i>
           </p>
         </div>
-        <button className="flex items-center space-x-2 border-2 border-white px-6 py-2 rounded-full hover:bg-white hover:text-[#043980] transition text-white">
+
+        <button
+          onClick={handleLogin}
+          className="flex items-center space-x-2 border-2 border-white px-6 py-2 rounded-full hover:bg-white hover:text-[#043980] transition text-white ease-in-out duration-300"
+        >
           <span>Get Started</span>
           <ArrowUpRight size={18} />
         </button>

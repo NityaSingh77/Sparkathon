@@ -1,193 +1,223 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
-import {
-  BiUser,
-  BiLockAlt,
-  BiEnvelope,
-  BiPhone,
-} from "react-icons/bi";
-import axios from "axios";
-
-import { GoogleLogin } from "@react-oauth/google";
-import type { CredentialResponse } from "@react-oauth/google";
-
-const LoginSignup = () => {
-  const [isLoginActive, setIsLoginActive] = useState(true);
-  const [formData, setFormData] = useState({ username: "", email: "", number: "", password: "" });
-  const navigate = useNavigate();
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const endpoint = isLoginActive ? "/login" : "/register";
-    const url = `http://localhost:5000${endpoint}`;
-
-    // ✅ Validation for registration
-    if (!isLoginActive) {
-      const phoneRegex = /^[0-9]{10}$/; 
-
-      if (!phoneRegex.test(formData.number)) {
-        alert("Please enter a valid 10-digit phone number.");
-        return;
-      }
-
-      if (!formData.email.includes("@")) {
-        alert("Please enter a valid email address.");
-        return;
-      }
-
-      if (formData.password.length < 6) {
-        alert("Password should be at least 6 characters long.");
-        return;
-      }
-    }
-
-    // TODO: Add actual login/register logic here
-    // Example:
-    try {
-      const response = await axios.post(url, formData);
-      localStorage.setItem("token", (response.data as { token: string }).token);
-      alert(isLoginActive ? "Login successful!" : "Registration successful!");
-      navigate("/");
-    } catch (error) {
-      alert("Authentication failed.");
-    }
-  };
-
-  // Google login handlers and toggleForm moved outside handleSubmit
-
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-    try {
-      const token = credentialResponse.credential;
-      if (!token) {
-        alert("Google login failed: No credential received.");
-        return;
-      }
-      // Send token to backend for verification and get app token
-      const response = await axios.post("http://localhost:5000/google-login", { token });
-      localStorage.setItem("token", (response.data as { token: string }).token);
-      alert("Google login successful!");
-      navigate("/");
-    } catch (error) {
-      alert("Google login failed.");
-    }
-  };
-
-  const handleGoogleFailure = () => {
-    alert("Google login failed.");
-  };
-
-  const toggleForm = (loginState: boolean) => {
-    setIsLoginActive(loginState);
-    setFormData({ username: "", email: "", number: "", password: "" });
-  };
+const AuthForm = () => {
+  const [isLogin, setIsLogin] = useState(true);
 
   return (
-    <div className="login-page Background">
-    <div className="Background">
-      <div className="flex justify-between items-center w-full px-6 pt-5 pl-8 absolute top-0 left-0 z-50">
-        <h2 className="text-3xl">
-          Auto<span className="text-[#ed832d]">Assist</span>
-        </h2>
-        <button
-          onClick={() => navigate("/admin/Adminlogin")}
-          className="bg-black text-white hover:bg-white hover:text-black hover:border hover:border-black font-semibold py-3 px-8 rounded-full shadow-lg transition duration-300"
+    <div
+      className={`
+        relative
+        w-[850px] max-w-full h-[550px]
+        bg-white
+        m-5
+        rounded-[30px]
+        shadow-[0_0_30px_rgba(0,0,0,0.2)]
+        overflow-hidden
+        font-poppins
+        select-none
+        font-inter
+      `}
+    >
+      {/* LOGIN FORM */}
+      <div
+        className={`
+          absolute top-0
+          h-full
+          w-1/2
+          bg-white
+          p-10
+          flex flex-col justify-center items-center
+          text-center text-[#333]
+          transition-all duration-700 ease-in-out
+          ${isLogin
+            ? "right-0 opacity-100 z-30 pointer-events-auto"
+            : "right-[-50%] opacity-0 z-0 pointer-events-none"}
+        `}
+      >
+        <form className="w-full max-w-md" onSubmit={(e) => e.preventDefault()}>
+          <h1 className="text-[36px] mb-2">Login</h1>
+
+          <div className="relative my-7">
+            <input
+              type="text"
+              placeholder="Username"
+              required
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
+            />
+            <i className="bx bxs-user absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
+          </div>
+
+          <div className="relative my-7">
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
+            />
+            <i className="bx bxs-lock-alt absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
+          </div>
+
+          <div className="text-left text-[14.5px] mb-6 -mt-4">
+            <a href="#" className="hover:underline">
+              Forgot Password?
+            </a>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full h-12 bg-[#043980] rounded-full shadow-md text-white font-semibold text-[16px] mb-5"
+          >
+            Login
+          </button>
+
+          <p className="mb-4">or login with social platforms</p>
+
+          <div className="flex justify-center space-x-3 text-2xl">
+            <a href="#" className="p-2 border-2 border-gray-300 rounded-lg text-[#333]">
+              <i className="bx bxl-google"></i>
+            </a>
+            {/* <a href="#" className="p-2 border-2 border-gray-300 rounded-lg text-[#333]">
+              <i className="bx bxl-github"></i>
+            </a>
+            <a href="#" className="p-2 border-2 border-gray-300 rounded-lg text-[#333]">
+              <i className="bx bxl-linkedin"></i>
+            </a> */}
+          </div>
+        </form>
+      </div>
+
+      {/* REGISTER FORM */}
+      <div
+        className={`
+          absolute top-0
+          h-full
+          w-1/2
+          bg-white
+          p-10
+          flex flex-col justify-center items-center
+          text-center text-[#333]
+          transition-all duration-700 ease-in-out
+          ${isLogin
+            ? "left-[50%] opacity-0 z-0 pointer-events-none"
+            : "left-0 opacity-100 z-30 pointer-events-auto"}
+        `}
+      >
+        <form className="w-full max-w-md" onSubmit={(e) => e.preventDefault()}>
+          <h1 className="text-[36px] mb-2">Registration</h1>
+
+          <div className="relative my-7">
+            <input
+              type="text"
+              placeholder="Username"
+              required
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
+            />
+            <i className="bx bxs-user absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
+          </div>
+
+          <div className="relative my-7">
+            <input
+              type="email"
+              placeholder="Email"
+              required
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
+            />
+            <i className="bx bxs-envelope absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
+          </div>
+
+          <div className="relative my-7">
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
+            />
+            <i className="bx bxs-lock-alt absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full h-12 bg-[#043980] rounded-full shadow-md text-white font-semibold text-[16px] mb-5"
+          >
+            Register
+          </button>
+
+          <p className="mb-4">or register with social platforms</p>
+
+          <div className="flex justify-center space-x-3 text-2xl">
+            <a href="#" className="p-2 border-2 border-gray-300 rounded-lg text-[#333]">
+              <i className="bx bxl-google"></i>
+            </a>
+          </div>
+        </form>
+      </div>
+
+      {/* TOGGLE BOX */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none select-none">
+        {/* Blue curve background */}
+        <div
+          className={`
+            absolute top-0
+            transition-all duration-[1800ms] ease-in-out
+            w-[300%] h-full
+            rounded-[150px]
+            bg-[#043980]
+            z-10
+            pointer-events-none
+            ${isLogin ? "left-[-250%]" : "left-[50%]"}
+          `}
+        ></div>
+
+        {/* Left Toggle Panel */}
+        <div
+          className={`
+            absolute top-0 left-0 w-1/2 h-full
+            flex flex-col justify-center items-center
+            text-white
+            transition-all duration-700 ease-in-out
+            z-20
+            pointer-events-auto
+            ${isLogin
+              ? "opacity-100 delay-[1200ms]"
+              : "opacity-0 -translate-x-full pointer-events-none delay-300"}
+          `}
         >
-          Admin Login
-        </button>
-      </div>
-
-      <div className={`container ${isLoginActive ? "" : "active"}`}>
-        <div className={`form-box ${isLoginActive ? "login" : "register"}`}>
-          <form onSubmit={handleSubmit}>
-            <h1>{isLoginActive ? "Login" : "Registration"}</h1>
-            <div className="input-box">
-              <input
-                type="text"
-                name="username"
-                placeholder="Username"
-                value={formData.username}
-                onChange={handleInputChange}
-                required
-              />
-              <BiUser className="icon" />
-            </div>
-            {!isLoginActive && (
-              <div className="input-box">
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-                <BiEnvelope className="icon" />
-              </div>
-            )}
-            <div className="input-box">
-              <input
-                type="text"
-                name="number"
-                placeholder="Phone Number"
-                value={formData.number}
-                onChange={handleInputChange}
-                required
-              />
-              {/* Added phone icon */}
-              <BiPhone className="icon" />
-            </div>
-
-            <div className="input-box">
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-              />
-              <BiLockAlt className="icon" />
-            </div>
-
-            <button type="submit" className="btn">
-              {isLoginActive ? "Login" : "Register"}
-            </button>
-
-            <p>or login with social platforms</p>
-
-            <div className="social-icons" style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-              <GoogleLogin 
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleFailure}
-              />
-            </div>
-          </form>
+          <h1 className="text-[36px] font-bold mb-4">Hello, Welcome!</h1>
+          <p className="mb-6">Don't have an account?</p>
+          <button
+            className="w-[160px] h-[46px] border-2 border-white font-semibold rounded-full hover:bg-white hover:text-[#043980] transition ease-in-out duration-300"
+            onClick={() => setIsLogin(false)}
+          >
+            Register
+          </button>
         </div>
-        <div className="toggle-box">
-          <div className="toggle-panel toggle-left">
-            <h1>Hello, <span className={`text-[#ed832d]`}>Welcome!</span></h1>
-            <p>Don't have an account?</p>
-            <button className="btn register-btn" onClick={() => toggleForm(false)}>
-              Register
-            </button>
-          </div>
-          <div className="toggle-panel toggle-right">
-            <h1>Welcome <span className={`text-[#ed832d]`}>Back!</span></h1>
-            <p>Already have an account?</p>
-            <button className="btn login-btn" onClick={() => toggleForm(true)}>
-              Login
-            </button>
-          </div>
+
+        {/* Right Toggle Panel */}
+        <div
+          className={`
+            absolute top-0 right-0 w-1/2 h-full
+            flex flex-col justify-center items-center
+            text-white
+            transition-all duration-700 ease-in-out
+            z-20
+            pointer-events-auto
+            ${isLogin
+              ? "opacity-0 translate-x-full pointer-events-none delay-300"
+              : "opacity-100 delay-[1200ms]"}
+          `}
+        >
+          <h1 className="text-[36px] font-bold mb-4">Welcome Back!</h1>
+          <p className="mb-6">Already have an account?</p>
+          <button
+            className="w-[160px] h-[46px] border-2 border-white font-semibold rounded-full hover:bg-white hover:text-[#043980] transition ease-in-out duration-300"
+            onClick={() => setIsLogin(true)}
+          >
+            Login
+          </button>
         </div>
       </div>
-    </div>
     </div>
   );
 };
 
-export default LoginSignup;
+export default AuthForm;

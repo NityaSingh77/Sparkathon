@@ -5,7 +5,7 @@ import StoreMap from './components/StoreMap';
 import AIForecasting from './components/AIForecasting';
 import TransferSuggestions from './components/TransferSuggestions';
 import ImpactDashboard from './components/ImpactDashboard';
-import MobileView from './components/MobileView';
+import RoutingEngine from './components/MobileView';
 import Home from './components/Home';
 import Login from './components/login';
 
@@ -22,8 +22,8 @@ function Dashboard() {
         return <TransferSuggestions />;
       case 'dashboard':
         return <ImpactDashboard />;
-      case 'mobile':
-        return <MobileView />;
+      case 'Routing Engine':
+        return <RoutingEngine />;
       default:
         return <StoreMap />;
     }

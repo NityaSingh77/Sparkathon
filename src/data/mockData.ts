@@ -50,7 +50,47 @@ export const stores: Store[] = [
     region: 'North Texas',
     manager: 'Robert Wilson',
     phone: '(214) 555-0105'
-  }
+  },
+  {
+    id: 'store-006',
+    name: 'Walmart Supercenter - Downtown Dallas',
+    address: '123 Main St, Dallas, TX',
+    lat: 32.7767,
+    lng: -96.7970,
+    region: 'North Texas',
+    manager: 'John Smith',
+    phone: '(214) 555-0101'
+  },
+  {
+    id: 'store-007',
+    name: 'Walmart Neighborhood Market - Houston',
+    address: '789 Pine Rd, Houston, TX',
+    lat: 29.7604,
+    lng: -95.3698,
+    region: 'South Texas',
+    manager: 'Sarah Lee',
+    phone: '(713) 555-0102'
+  },
+  {
+    id: 'store-008',
+    name: 'Walmart Express - Austin',
+    address: '456 Oak Ave, Austin, TX',
+    lat: 30.2672,
+    lng: -97.7431,
+    region: 'Central Texas',
+    manager: 'Carlos Martinez',
+    phone: '(512) 555-0103'
+  },
+  {
+    id: 'store-009',
+    name: 'Walmart Supercenter - El Paso',
+    address: '321 Elm St, El Paso, TX',
+    lat: 31.7619,
+    lng: -106.4850,
+    region: 'West Texas',
+    manager: 'Priya Kapoor',
+    phone: '(915) 555-0104'
+  },
 ];
 
 const generateStockItems = (): StockItem[] => [
@@ -111,16 +151,279 @@ const generateStockItems = (): StockItem[] => [
   }
 ];
 
-export const storeInventories: StoreInventory[] = stores.map(store => {
-  const items = generateStockItems();
-  return {
-    storeId: store.id,
-    items,
-    totalValue: items.reduce((sum, item) => sum + (item.currentStock * item.price), 0),
-    lowStockCount: items.filter(item => item.currentStock < item.minThreshold).length,
-    overStockCount: items.filter(item => item.currentStock > item.maxThreshold).length
-  };
-});
+export const storeInventories: StoreInventory[] = [
+  {
+    storeId: 'store-001',
+    items: [
+      {
+        sku: 'SKU-001',
+        productName: 'iPhone 15 Pro Max',
+        category: 'Electronics',
+        currentStock: 12,
+        minThreshold: 20,
+        maxThreshold: 60,
+        demandForecast: 25,
+        price: 1199.99,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        sku: 'SKU-002',
+        productName: 'Samsung 65" 4K TV',
+        category: 'Electronics',
+        currentStock: 42,
+        minThreshold: 15,
+        maxThreshold: 45,
+        demandForecast: 20,
+        price: 899.99,
+        lastUpdated: new Date().toISOString()
+      }
+    ],
+    totalValue: 12 * 1199.99 + 42 * 899.99,
+    lowStockCount: 1,
+    overStockCount: 0
+  },
+  {
+    storeId: 'store-002',
+    items: [
+      {
+        sku: 'SKU-001',
+        productName: 'iPhone 15 Pro Max',
+        category: 'Electronics',
+        currentStock: 70,
+        minThreshold: 20,
+        maxThreshold: 60,
+        demandForecast: 15,
+        price: 1199.99,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        sku: 'SKU-002',
+        productName: 'Samsung 65" 4K TV',
+        category: 'Electronics',
+        currentStock: 8,
+        minThreshold: 15,
+        maxThreshold: 45,
+        demandForecast: 18,
+        price: 899.99,
+        lastUpdated: new Date().toISOString()
+      }
+    ],
+    totalValue: 70 * 1199.99 + 8 * 899.99,
+    lowStockCount: 1,
+    overStockCount: 1
+  },
+  {
+    storeId: 'store-003',
+    items: [
+      {
+        sku: 'SKU-001',
+        productName: 'iPhone 15 Pro Max',
+        category: 'Electronics',
+        currentStock: 58,
+        minThreshold: 20,
+        maxThreshold: 60,
+        demandForecast: 10,
+        price: 1199.99,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        sku: 'SKU-002',
+        productName: 'Samsung 65" 4K TV',
+        category: 'Electronics',
+        currentStock: 18,
+        minThreshold: 15,
+        maxThreshold: 45,
+        demandForecast: 15,
+        price: 899.99,
+        lastUpdated: new Date().toISOString()
+      }
+    ],
+    totalValue: 58 * 1199.99 + 18 * 899.99,
+    lowStockCount: 0,
+    overStockCount: 1
+  },
+  {
+    storeId: 'store-004',
+    items: [
+      {
+        sku: 'SKU-001',
+        productName: 'iPhone 15 Pro Max',
+        category: 'Electronics',
+        currentStock: 19,
+        minThreshold: 20,
+        maxThreshold: 60,
+        demandForecast: 23,
+        price: 1199.99,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        sku: 'SKU-002',
+        productName: 'Samsung 65" 4K TV',
+        category: 'Electronics',
+        currentStock: 50,
+        minThreshold: 15,
+        maxThreshold: 45,
+        demandForecast: 14,
+        price: 899.99,
+        lastUpdated: new Date().toISOString()
+      }
+    ],
+    totalValue: 19 * 1199.99 + 50 * 899.99,
+    lowStockCount: 1,
+    overStockCount: 1
+  },
+  {
+    storeId: 'store-005',
+    items: [
+      {
+        sku: 'SKU-001',
+        productName: 'iPhone 15 Pro Max',
+        category: 'Electronics',
+        currentStock: 65,
+        minThreshold: 20,
+        maxThreshold: 60,
+        demandForecast: 17,
+        price: 1199.99,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        sku: 'SKU-002',
+        productName: 'Samsung 65" 4K TV',
+        category: 'Electronics',
+        currentStock: 13,
+        minThreshold: 15,
+        maxThreshold: 45,
+        demandForecast: 13,
+        price: 899.99,
+        lastUpdated: new Date().toISOString()
+      }
+    ],
+    totalValue: 65 * 1199.99 + 13 * 899.99,
+    lowStockCount: 1,
+    overStockCount: 1
+  },
+  {
+    storeId: 'store-006',
+    items: [
+      {
+        sku: 'SKU-001',
+        productName: 'iPhone 15 Pro Max',
+        category: 'Electronics',
+        currentStock: 22,
+        minThreshold: 20,
+        maxThreshold: 60,
+        demandForecast: 24,
+        price: 1199.99,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        sku: 'SKU-002',
+        productName: 'Samsung 65" 4K TV',
+        category: 'Electronics',
+        currentStock: 10,
+        minThreshold: 15,
+        maxThreshold: 45,
+        demandForecast: 19,
+        price: 899.99,
+        lastUpdated: new Date().toISOString()
+      }
+    ],
+    totalValue: 22 * 1199.99 + 10 * 899.99,
+    lowStockCount: 1,
+    overStockCount: 0
+  },
+  {
+    storeId: 'store-007',
+    items: [
+      {
+        sku: 'SKU-001',
+        productName: 'iPhone 15 Pro Max',
+        category: 'Electronics',
+        currentStock: 80,
+        minThreshold: 20,
+        maxThreshold: 60,
+        demandForecast: 10,
+        price: 1199.99,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        sku: 'SKU-002',
+        productName: 'Samsung 65" 4K TV',
+        category: 'Electronics',
+        currentStock: 5,
+        minThreshold: 15,
+        maxThreshold: 45,
+        demandForecast: 25,
+        price: 899.99,
+        lastUpdated: new Date().toISOString()
+      }
+    ],
+    totalValue: 80 * 1199.99 + 5 * 899.99,
+    lowStockCount: 1,
+    overStockCount: 1
+  },
+  {
+    storeId: 'store-008',
+    items: [
+      {
+        sku: 'SKU-001',
+        productName: 'iPhone 15 Pro Max',
+        category: 'Electronics',
+        currentStock: 35,
+        minThreshold: 20,
+        maxThreshold: 60,
+        demandForecast: 22,
+        price: 1199.99,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        sku: 'SKU-002',
+        productName: 'Samsung 65" 4K TV',
+        category: 'Electronics',
+        currentStock: 46,
+        minThreshold: 15,
+        maxThreshold: 45,
+        demandForecast: 17,
+        price: 899.99,
+        lastUpdated: new Date().toISOString()
+      }
+    ],
+    totalValue: 35 * 1199.99 + 46 * 899.99,
+    lowStockCount: 0,
+    overStockCount: 1
+  },
+  {
+    storeId: 'store-009',
+    items: [
+      {
+        sku: 'SKU-001',
+        productName: 'iPhone 15 Pro Max',
+        category: 'Electronics',
+        currentStock: 16,
+        minThreshold: 20,
+        maxThreshold: 60,
+        demandForecast: 21,
+        price: 1199.99,
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        sku: 'SKU-002',
+        productName: 'Samsung 65" 4K TV',
+        category: 'Electronics',
+        currentStock: 14,
+        minThreshold: 15,
+        maxThreshold: 45,
+        demandForecast: 12,
+        price: 899.99,
+        lastUpdated: new Date().toISOString()
+      }
+    ],
+    totalValue: 16 * 1199.99 + 14 * 899.99,
+    lowStockCount: 2,
+    overStockCount: 0
+  }
+];
+
 
 export const transferSuggestions: TransferSuggestion[] = [
   {

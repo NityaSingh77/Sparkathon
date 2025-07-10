@@ -20,3 +20,14 @@
 html {
   scroll-behavior: smooth;
 }
+@layer base {
+  body {
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(90deg, #e2e2e2, #c9d6ff);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
