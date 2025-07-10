@@ -49,7 +49,7 @@ const LandingPage: React.FC = () => {
           </h1>
 
           <p className="text-3xl mt-4 text-[#d0c8c8] pt-4">
-            <i>Smart Inventory Redistribution System</i>
+            <i>Smart Inventory Redistribution Network</i>
           </p>
         </div>
         <button className="flex items-center space-x-2 border-2 border-white px-6 py-2 rounded-full hover:bg-white hover:text-[#043980] transition text-white">
