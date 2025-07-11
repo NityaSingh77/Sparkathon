@@ -1,5 +1,13 @@
-import React, { ReactNode } from 'react';
-import { Package, Map, TrendingUp, BarChart3, RouteIcon } from 'lucide-react';
+import React, { ReactNode, useState } from 'react';
+import {
+  Package,
+  Map,
+  TrendingUp,
+  BarChart3,
+  RouteIcon,
+  UserCircle,
+  Bell
+} from 'lucide-react';
 import logo from '../assets/logo.jpg';
 
 interface LayoutProps {
@@ -9,6 +17,8 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => {
+  const [showNotifications, setShowNotifications] = useState(false);
+
   const tabs = [
     { id: 'map', label: 'Store Map', icon: Map },
     { id: 'forecast', label: 'AI Forecasting', icon: TrendingUp },
@@ -17,25 +27,76 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
     { id: 'Routing Engine', label: 'Routing Engine', icon: RouteIcon }
   ];
 
+  const notifications = [
+    { id: 1, type: 'Low Stock', message: 'SKU #123 is running low at Store A.' },
+    { id: 2, type: 'Overstock', message: 'SKU #456 is overstocked in Store B.' },
+    { id: 3, type: 'Update', message: 'Stock redistribution has been completed.' }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-100 text-white">
-      <header className="bg-white border-b border-gray-700">
-        <div className="max-w-9xl sm:px-6 lg:px-8">
+      {/* HEADER */}
+      <header className="bg-white border-b border-gray-200 shadow">
+        <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-1">
+            {/* Logo */}
+            <div className="flex items-center space-x-2">
               <img src={logo} alt="Logo" className="w-6 h-6 object-cover" />
-              <h1 className="px-2 py-1 text-lg font-bold text-black">
-                SIRN
-              </h1>
+              <h1 className="text-lg font-bold text-black">SIRN</h1>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Live Data</span>
+
+            {/* Status & Icons */}
+            <div className="flex items-center space-x-5 text-sm text-gray-600 relative">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Live Data</span>
+              </div>
+
+              {/* Bell Icon */}
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative hover:text-[#043980] transition"
+              >
+                <Bell className="w-6 h-6" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {/* User Icon */}
+              <button className="hover:text-[#043980] transition" title="Login">
+                <UserCircle className="w-6 h-6" />
+              </button>
+
+              {/* Notification Modal */}
+              {showNotifications && (
+                <div className="absolute top-12 right-0 w-80 bg-white shadow-lg rounded-lg z-50 overflow-hidden border border-gray-200">
+                  <div className="px-4 py-2 border-b text-black font-semibold">Notifications</div>
+                  <ul className="divide-y divide-gray-200 max-h-64 overflow-y-auto text-sm text-black">
+                    {notifications.map((note) => (
+                      <li key={note.id} className="px-4 py-3 hover:bg-gray-50">
+                        <strong>{note.type}:</strong> {note.message}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="px-4 py-2 text-right">
+                    <button
+                      onClick={() => setShowNotifications(false)}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </header>
 
+      {/* NAVBAR */}
       <nav className="bg-[#043980] border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8 overflow-x-auto">
@@ -60,6 +121,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
         </div>
       </nav>
 
+      {/* MAIN */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>

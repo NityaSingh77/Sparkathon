@@ -142,7 +142,7 @@ const ImpactDashboard: React.FC = () => {
         {/* Efficiency Breakdown */}
         <ChartCard title="Efficiency Breakdown">
           <div className="flex items-center h-80">
-            <div className="w-1/2">
+            <div className="w-1/2 h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -231,7 +231,16 @@ const ImpactDashboard: React.FC = () => {
 };
 
 // Reusable Components
-const MetricCard = ({ icon, change, value, label, gradient, isPositive = true }) => (
+type MetricCardProps = {
+  icon: React.ReactNode;
+  change: string;
+  value: string | number;
+  label: string;
+  gradient: string;
+  isPositive?: boolean;
+};
+
+const MetricCard: React.FC<MetricCardProps> = ({ icon, change, value, label, gradient, isPositive = true }) => (
   <div className={`bg-gradient-to-br ${gradient} rounded-xl p-6 text-white`}>
     <div className="flex items-center justify-between mb-4">
       <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">{icon}</div>
@@ -245,14 +254,25 @@ const MetricCard = ({ icon, change, value, label, gradient, isPositive = true })
   </div>
 );
 
-const ChartCard = ({ title, children }) => (
+type ChartCardProps = {
+  title: string;
+  children: React.ReactNode;
+};
+
+const ChartCard: React.FC<ChartCardProps> = ({ title, children }) => (
   <div className="bg-gray-800 rounded-xl p-6">
     <h3 className="text-lg font-semibold text-white mb-6">{title}</h3>
     <div className="h-80">{children}</div>
   </div>
 );
 
-const QuickStat = ({ icon, label, value }) => (
+type QuickStatProps = {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+};
+
+const QuickStat: React.FC<QuickStatProps> = ({ icon, label, value }) => (
   <div className="bg-gray-800 rounded-xl p-4">
     <div className="flex items-center space-x-2 mb-2">
       {icon}

@@ -186,7 +186,7 @@ const getSuggestions = (): Suggestion[] => {
       {getSuggestions().map((sug, idx) => (
         <div key={idx} className="bg-gray-100/80 rounded-lg p-3 text-sm text-gray-300">
           <p><span className="text-black"><b>{sug.suggestedQty} units</b> of </span><span className="text-blue-800">{sug.sku}</span></p>
-          <p className="text-black">From: <span className="text-yellow-700">{sug.fromStore.name}</span></p>
+          <p className="text-black">From: <span className="text-yellow-600">{sug.fromStore.name}</span></p>
           <p className="text-black">To: <span className="text-red-700">{sug.toStore.name}</span></p>
         </div>
       ))}
