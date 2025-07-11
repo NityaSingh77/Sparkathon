@@ -1,11 +1,12 @@
 import { useState } from "react";
-
+import '../styles/login.css';
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
 
   return (
-    <div
-      className={`
+    <div className="login-page">
+      <div
+        className={`
         relative
         w-[850px] max-w-full h-[550px]
         bg-white
@@ -42,8 +43,7 @@ const AuthForm = () => {
               type="text"
               placeholder="Username"
               required
-              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
-            />
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none" />
             <i className="bx bxs-user absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
           </div>
 
@@ -52,8 +52,7 @@ const AuthForm = () => {
               type="password"
               placeholder="Password"
               required
-              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
-            />
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none" />
             <i className="bx bxs-lock-alt absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
           </div>
 
@@ -77,11 +76,11 @@ const AuthForm = () => {
               <i className="bx bxl-google"></i>
             </a>
             {/* <a href="#" className="p-2 border-2 border-gray-300 rounded-lg text-[#333]">
-              <i className="bx bxl-github"></i>
-            </a>
-            <a href="#" className="p-2 border-2 border-gray-300 rounded-lg text-[#333]">
-              <i className="bx bxl-linkedin"></i>
-            </a> */}
+      <i className="bx bxl-github"></i>
+    </a>
+    <a href="#" className="p-2 border-2 border-gray-300 rounded-lg text-[#333]">
+      <i className="bx bxl-linkedin"></i>
+    </a> */}
           </div>
         </form>
       </div>
@@ -110,8 +109,7 @@ const AuthForm = () => {
               type="text"
               placeholder="Username"
               required
-              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
-            />
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none" />
             <i className="bx bxs-user absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
           </div>
 
@@ -120,8 +118,7 @@ const AuthForm = () => {
               type="email"
               placeholder="Email"
               required
-              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
-            />
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none" />
             <i className="bx bxs-envelope absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
           </div>
 
@@ -130,8 +127,7 @@ const AuthForm = () => {
               type="password"
               placeholder="Password"
               required
-              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none"
-            />
+              className="w-full bg-[#eee] rounded-lg py-3 px-5 pr-14 text-[16px] font-medium text-[#333] placeholder:text-[#888] outline-none" />
             <i className="bx bxs-lock-alt absolute right-5 top-1/2 -translate-y-1/2 text-[20px]"></i>
           </div>
 
@@ -216,7 +212,8 @@ const AuthForm = () => {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+      </div>
   );
 };
 
