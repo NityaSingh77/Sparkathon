@@ -22,11 +22,11 @@ const TransferSuggestions: React.FC = () => {
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'critical': return 'bg-red-600 text-white';
-      case 'high': return 'bg-orange-600 text-white';
-      case 'medium': return 'bg-yellow-600 text-black';
-      case 'low': return 'bg-blue-600 text-white';
-      default: return 'bg-gray-600 text-white';
+      case 'critical': return 'bg-red-500/80 text-white border-2 border-red-700';
+      case 'high': return 'bg-orange-500/80 text-white border-2 border-orange-700';
+      case 'medium': return 'bg-yellow-400/80 text-white border-2 border-yellow-700';
+      case 'low': return 'bg-blue-500/80 text-white border-2 border-blue-700';
+      default: return 'bg-gray-500/80 text-white border-2 border-gray-700';
     }
   };
 
@@ -204,7 +204,7 @@ const TransferSuggestions: React.FC = () => {
                       {getUrgencyIcon(suggestion.urgency)}
                       <span className="capitalize">{suggestion.urgency}</span>
                     </span>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-gray-300">
                       Confidence: {(suggestion.confidence * 100).toFixed(0)}%
                     </span>
                     {(isApproved || isRejected) && (
