@@ -8,6 +8,7 @@ import ImpactDashboard from './components/ImpactDashboard';
 import RoutingEngine from './components/MobileView';
 import Home from './components/Home';
 import Login from './components/login';
+import SurplusRescue from './components/surplusRescue';
 
 function Dashboard() {
   const [activeTab, setActiveTab] = useState('map');
@@ -24,6 +25,8 @@ function Dashboard() {
         return <ImpactDashboard />;
       case 'Routing Engine':
         return <RoutingEngine />;
+      case 'surplusRescue':
+        return <SurplusRescue />;
       default:
         return <StoreMap />;
     }
