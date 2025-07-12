@@ -1,59 +1,97 @@
 // SustainabilityInsights.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
 
-// Mock environmental footprints (could come from CSV/JSON API)
-const mockProductFootprints = [
-  { productId: 'p001', name: 'Organic Apples', co2PerUnit: 0.4, energyPerUnit: 0.2, wastePerUnit: 0.1 },
-  { productId: 'p002', name: 'Almond Milk', co2PerUnit: 1.1, energyPerUnit: 0.8, wastePerUnit: 0.05 },
-  { productId: 'p003', name: 'Winter Jacket', co2PerUnit: 10, energyPerUnit: 5, wastePerUnit: 2 },
-];
+// Define precise store locations
+type RegionKey =
+  | 'Walmart Supercenter - Austin'
+  | 'Walmart - Houston Heights'
+  | 'Walmart - El Paso Westgate'
+  | 'Walmart - Plano Park Blvd';
 
-// Mock weather data by region (simplified)
-const mockWeatherData = {
-  'North Texas': { season: 'summer', avgTempC: 34 },
-  'South Texas': { season: 'summer', avgTempC: 36 },
-  'Central Texas': { season: 'spring', avgTempC: 25 },
-  'West Texas': { season: 'fall', avgTempC: 18 },
+// Store metadata
+const storeMeta: Record<RegionKey, { city: string; storeId: string }> = {
+  'Walmart Supercenter - Austin': { city: 'Austin, TX', storeId: '4563' },
+  'Walmart - Houston Heights': { city: 'Houston, TX', storeId: '3921' },
+  'Walmart - El Paso Westgate': { city: 'El Paso, TX', storeId: '2230' },
+  'Walmart - Plano Park Blvd': { city: 'Plano, TX', storeId: '3012' },
 };
 
-// ESG badge conditions (mock)
-type RegionKey = 'North Texas' | 'South Texas' | 'Central Texas' | 'West Texas';
+// ESG badge data
 const regionBadges: Record<RegionKey, string[]> = {
-  'North Texas': ['ESG Verified Region', 'Low Impact Store'],
-  'South Texas': ['ESG Verified Region'],
-  'Central Texas': ['Low Impact Store'],
-  'West Texas': [],
+  'Walmart Supercenter - Austin': ['Low Impact Store'],
+  'Walmart - Houston Heights': ['ESG Verified Region'],
+  'Walmart - El Paso Westgate': [],
+  'Walmart - Plano Park Blvd': ['ESG Verified Region', 'Low Impact Store'],
 };
 
-// Adjust CO2 emissions based on weather logic (e.g., refrigeration increases in summer)
+// Weather-based logic
+const mockWeatherData: Record<RegionKey, { season: string; avgTempC: number }> = {
+  'Walmart Supercenter - Austin': { season: 'summer', avgTempC: 35 },
+  'Walmart - Houston Heights': { season: 'summer', avgTempC: 33 },
+  'Walmart - El Paso Westgate': { season: 'fall', avgTempC: 21 },
+  'Walmart - Plano Park Blvd': { season: 'spring', avgTempC: 28 },
+};
+
 const adjustForWeather = (co2: number, region: RegionKey) => {
   const weather = mockWeatherData[region];
-  if (!weather) return co2;
-
-  // If summer and avgTempC > 30, increase CO2 by 15% due to extra refrigeration
   if (weather.season === 'summer' && weather.avgTempC > 30) {
     return Math.round(co2 * 1.15);
   }
   return co2;
 };
 
+// Product footprints
+const mockProductFootprints = [
+  { productId: 'p001', name: 'Organic Apples', co2PerUnit: 0.4, energyPerUnit: 0.2, wastePerUnit: 0.1 },
+  { productId: 'p002', name: 'Almond Milk', co2PerUnit: 1.1, energyPerUnit: 0.8, wastePerUnit: 0.05 },
+  { productId: 'p003', name: 'Winter Jacket', co2PerUnit: 10, energyPerUnit: 5, wastePerUnit: 2 },
+];
+
 const SustainabilityInsights: React.FC = () => {
-  const [regionalImpact, setRegionalImpact] = useState<{ region: RegionKey; co2: number; waste: number; }[]>([
-    { region: 'North Texas', co2: 420, waste: 200 },
-    { region: 'South Texas', co2: 280, waste: 160 },
-    { region: 'Central Texas', co2: 310, waste: 230 },
-    { region: 'West Texas', co2: 310, waste: 190 },
+  const [regionalImpact, setRegionalImpact] = useState<
+    { region: RegionKey; co2: number; waste: number; tempC?: number }[]
+  >([
+    { region: 'Walmart Supercenter - Austin', co2: 390, waste: 210 },
+    { region: 'Walmart - Houston Heights', co2: 340, waste: 180 },
+    { region: 'Walmart - El Paso Westgate', co2: 310, waste: 160 },
+    { region: 'Walmart - Plano Park Blvd', co2: 295, waste: 175 },
   ]);
 
-  // Adjust regional CO2 emissions based on weather when component mounts
   useEffect(() => {
-    const adjusted = regionalImpact.map((region) => ({
-      ...region,
-      co2: adjustForWeather(region.co2, region.region),
-    }));
-    setRegionalImpact(adjusted);
-  }, []);
+  console.log('API Key (from env):', import.meta.env.VITE_WEATHER_API_KEY);
+  const fetchWeatherAndAdjust = async () => {
+    const updated = await Promise.all(
+      regionalImpact.map(async (store) => {
+        const city = storeMeta[store.region].city.split(',')[0]; // get 'Austin' from 'Austin, TX'
+        try {
+          const res = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${import.meta.env.VITE_WEATHER_API_KEY}&units=metric`
+          );
+          const data = await res.json();
+          const temp = data?.main?.temp;
+
+          const adjustedCo2 =
+            temp && temp > 30 ? Math.round(store.co2 * 1.15) : store.co2;
+
+          return {
+            ...store,
+            co2: adjustedCo2,
+            tempC: temp,
+          };
+        } catch (err) {
+          console.error(`Weather fetch failed for ${city}:`, err);
+          return store; // fallback to original
+        }
+      })
+    );
+
+    setRegionalImpact(updated);
+  };
+
+  fetchWeatherAndAdjust();
+}, []);
+
 
   const metrics = {
     co2Reduced: regionalImpact.reduce((acc, r) => acc + r.co2, 0),
@@ -63,15 +101,16 @@ const SustainabilityInsights: React.FC = () => {
   };
 
   const recommendations = [
-    'Route surplus perishables from Uptown to Eastside — expiring soon.',
-    'Flag slow-moving winter apparel in El Paso for donation or discount.',
-    'Promote bulk purchase incentives in Downtown Dallas to reduce overstock.',
-    'Optimize cooling loads in Suburbs store — energy spike projected.',
-    'Explore EV truck routing between Houston & Austin for redistribution.',
+    'Route surplus perishables from Austin to surrounding rural stores.',
+    'Consider markdown or donation for stagnant apparel in El Paso.',
+    'Apply bulk savings incentives in Plano to reduce package waste.',
+    'Optimize refrigeration cycles in Houston Heights during peak load.',
+    'Use EV trucks for nightly redistribution between Plano and Austin.',
   ];
 
   return (
     <div className="space-y-10">
+      {/* Header */}
       <div className="space-y-2">
         <h1 className="text-2xl font-bold text-gray-900">Sustainability Insights</h1>
         <p className="text-gray-600">
@@ -99,48 +138,49 @@ const SustainabilityInsights: React.FC = () => {
         </div>
       </div>
 
-      {/* Regional Breakdown */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-semibold mb-4">Regional Environmental Impact</h2>
-        <div className="space-y-4">
-          {regionalImpact.map((region, index) => (
-            <div key={index} className="flex justify-between items-center border-b pb-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="text-gray-600" size={16} />
-                <span className="font-medium text-gray-800">{region.region}</span>
-                {regionBadges[region.region]?.map((badge: string, i: number) => (
-                  <span
-                    key={i}
-                    className="ml-2 inline-block bg-green-200 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold"
-                  >
-                    {badge}
-                  </span>
-                ))}
+      {/* Regional Impact */}
+      <div className="bg-[#043980] shadow rounded-lg p-6">
+        <h2 className="text-lg font-semibold mb-4 text-white">Regional Environmental Impact</h2>
+        <div className="space-y-4 text-[18px]">
+          {regionalImpact.map((region, index) => {
+            const meta = storeMeta[region.region];
+            return (
+              <div key={index} className="flex justify-between items-center border-b pb-2">
+                <div className="flex items-center gap-2">
+                  <MapPin className="text-gray-100" size={16} />
+                  <div>
+                    <div className="font-medium text-gray-100">
+                      {region.region}
+                      <span className="text-xs text-gray-400 ml-2">(#{meta.storeId}, {meta.city})</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {regionBadges[region.region]?.map((badge, i) => (
+                        <span
+                          key={i}
+                          className="inline-block bg-green-200 text-green-800 text-xs px-2 py-0.5 rounded-full"
+                        >
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-200">
+                  CO₂: <b>{region.co2} kg</b> | Waste Diverted: <b>{region.waste}</b> | Temp: <b>{region.tempC ? `${region.tempC}°C` : 'N/A'}</b>
+                </div>
+
               </div>
-              <div className="text-sm text-gray-600">
-                CO₂: <b>{region.co2} kg</b> | Waste Diverted: <b>{region.waste}</b>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Recommendations */}
-      <div className="bg-gray-50 p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold mb-4">Green Recommendations</h2>
-        <ul className="list-disc list-inside space-y-2 text-gray-700">
-          {recommendations.map((rec, i) => (
-            <li key={i}>{rec}</li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Optional: Display product footprints */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-semibold mb-4">Sample Product Environmental Footprints</h2>
-        <table className="w-full text-left border-collapse border border-gray-300">
+      {/* Product Footprints */}
+        <h2 className="text-lg font-semibold text-black">Product Environmental Footprints</h2>
+        <div className="overflow-hidden shadow rounded-lg border border-gray-300">
+        <table className="min-w-full divide-y divide-gray-200">
           <thead>
-            <tr className="bg-gray-100">
+            <tr className="bg-[#043980] text-white test-lg">
               <th className="border border-gray-300 px-3 py-1">Product</th>
               <th className="border border-gray-300 px-3 py-1">CO₂ per Unit (kg)</th>
               <th className="border border-gray-300 px-3 py-1">Energy per Unit (kWh)</th>
@@ -150,17 +190,27 @@ const SustainabilityInsights: React.FC = () => {
           <tbody>
             {mockProductFootprints.map((p) => (
               <tr key={p.productId}>
-                <td className="border border-gray-300 px-3 py-1">{p.name}</td>
-                <td className="border border-gray-300 px-3 py-1">{p.co2PerUnit}</td>
-                <td className="border border-gray-300 px-3 py-1">{p.energyPerUnit}</td>
-                <td className="border border-gray-300 px-3 py-1">{p.wastePerUnit}</td>
+                <td className="border border-gray-400 px-3 py-1 text-black bg-[#043980]/10">{p.name}</td>
+                <td className="border border-gray-400 px-3 py-1 text-black bg-[#043980]/10">{p.co2PerUnit}</td>
+                <td className="border border-gray-400 px-3 py-1 text-black bg-[#043980]/10">{p.energyPerUnit}</td>
+                <td className="border border-gray-400 px-3 py-1 text-black bg-[#043980]/10">{p.wastePerUnit}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="bg-[#043980]/10 p-6 rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-4 text-black">Green Recommendations</h2>
+        <ul className="list-disc list-inside space-y-2 text-gray-700">
+          {recommendations.map((rec, i) => (
+            <li key={i}>{rec}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );
 };
 
 export default SustainabilityInsights;
+console.log('API Key:', import.meta.env.VITE_WEATHER_API_KEY);
+

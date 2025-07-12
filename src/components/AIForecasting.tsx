@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
   Brain,
@@ -19,47 +19,83 @@ import {
   Area
 } from 'recharts';
 
+import { fetchProducts, fetchStores, fetchForecastData, fetchFactors } from '../data/mockApi';
+
 const AIForecasting: React.FC = () => {
-  const [selectedProduct, setSelectedProduct] = useState('SKU-001');
-  const [selectedStore, setSelectedStore] = useState('store-001');
+  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedStore, setSelectedStore] = useState('');
   const [forecastRange, setForecastRange] = useState(7);
 
-  const demandData = [
-    { date: '2024-01-15', actual: 28, predicted: 25, confidence: 89 },
-    { date: '2024-01-16', actual: 24, predicted: 22, confidence: 85 },
-    { date: '2024-01-17', actual: 19, predicted: 18, confidence: 92 },
-    { date: '2024-01-18', actual: null, predicted: 21, confidence: 87 },
-    { date: '2024-01-19', actual: null, predicted: 26, confidence: 83 },
-    { date: '2024-01-20', actual: null, predicted: 23, confidence: 88 },
-    { date: '2024-01-21', actual: null, predicted: 29, confidence: 85 }
-  ];
+  type DemandDatum = { date: string; actual: number | null; predicted: number; confidence: number };
+  const [demandData, setDemandData] = useState<DemandDatum[]>([]);
+  type Factor = {
+    factor: string;
+    impact: number;
+    trend: 'positive' | 'negative' | 'neutral';
+  };
+  const [factorsData, setFactorsData] = useState<Factor[]>([]);
+  type Product = { value: string; label: string; accuracy: number };
+  type Store = { value: string; label: string };
 
-  const factorsData = [
-    { factor: 'Historical Sales', impact: 35, trend: 'positive' },
-    { factor: 'Seasonal Patterns', impact: 28, trend: 'positive' },
-    { factor: 'Local Events', impact: 15, trend: 'neutral' },
-    { factor: 'Weather', impact: 12, trend: 'negative' },
-    { factor: 'Promotions', impact: 8, trend: 'positive' },
-    { factor: 'Competitor Activity', impact: 2, trend: 'negative' }
-  ];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
 
-  const products = [
-    { value: 'SKU-001', label: 'iPhone 15 Pro Max', accuracy: 89 },
-    { value: 'SKU-002', label: 'Samsung 65" 4K TV', accuracy: 85 },
-    { value: 'SKU-003', label: 'Nike Air Max Sneakers', accuracy: 91 },
-    { value: 'SKU-004', label: 'Sony Noise Cancelling Headphones', accuracy: 80 },
-    { value: 'SKU-005', label: 'Fitbit Charge 6', accuracy: 67 },
-    { value: 'SKU-006', label: 'GoPro Hero 12', accuracy: 87 },
-    { value: 'SKU-005', label: 'Apple Watch Series 9', accuracy: 86 },
-    { value: 'SKU-006', label: 'Canon EOS R6 Camera', accuracy: 84 },
-    { value: 'SKU-006', label: 'KitchenAid Stand Mixer', accuracy: 84 }
-  ];
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const stores = [
-    { value: 'store-001', label: 'Downtown Supercenter' },
-    { value: 'store-002', label: 'Uptown Neighborhood' },
-    { value: 'store-003', label: 'Suburbs Supercenter' }
-  ];
+  // Load products and stores on mount
+  useEffect(() => {
+    async function loadInitialData() {
+      try {
+        setLoading(true);
+        const prods = await fetchProducts();
+        const strs = await fetchStores();
+        setProducts(prods);
+        setStores(strs);
+        // Select first by default
+        if (prods.length) setSelectedProduct(prods[0].value);
+        if (strs.length) setSelectedStore(strs[0].value);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load initial data');
+        setLoading(false);
+      }
+    }
+    loadInitialData();
+  }, []);
+
+  // Fetch forecast and factors when selection changes
+  useEffect(() => {
+    if (!selectedProduct || !selectedStore) return;
+    async function loadForecastAndFactors() {
+      try {
+        setLoading(true);
+        const [forecast, factors] = await Promise.all([
+          fetchForecastData(selectedProduct, selectedStore, forecastRange),
+          fetchFactors(),
+        ]);
+        setDemandData(forecast);
+        setFactorsData(
+          factors.map(f =>
+            ({
+              ...f,
+              trend:
+                f.trend === 'positive'
+                  ? 'positive'
+                  : f.trend === 'negative'
+                  ? 'negative'
+                  : 'neutral'
+            } as Factor)
+          )
+        );
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load forecast data');
+        setLoading(false);
+      }
+    }
+    loadForecastAndFactors();
+  }, [selectedProduct, selectedStore, forecastRange]);
 
   const exportCSV = () => {
     const headers = ['Date', 'Actual', 'Predicted', 'Confidence'];
@@ -74,8 +110,17 @@ const AIForecasting: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  if (loading && products.length === 0) {
+    return <p className="text-center py-20 text-gray-600">Loading...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center py-20 text-red-600">{error}</p>;
+  }
+
   return (
     <div className="space-y-6 font-inter">
+      {/* Header + Selectors */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-black">AI Demand Forecasting</h2>
@@ -85,7 +130,7 @@ const AIForecasting: React.FC = () => {
           <select
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
-            className="bg-gray-100 border-2 border-gray-700 text-black px-3 py-2 rounded-lg focus:ring-2 focus:ring-[#043980]"
+            className="bg-black border-2 border-gray-700 text-white px-2 py-2 rounded-full focus:ring-2 focus:ring-[#043980]"
           >
             {products.map(product => (
               <option key={product.value} value={product.value}>{product.label}</option>
@@ -94,7 +139,7 @@ const AIForecasting: React.FC = () => {
           <select
             value={selectedStore}
             onChange={(e) => setSelectedStore(e.target.value)}
-            className="bg-gray-100 border-2 border-gray-700 text-black px-3 py-2 rounded-lg focus:ring-2 focus:ring-[#043980]"
+            className="bg-black text-white px-3 py-3 rounded-full focus:ring-2 focus:ring-[#043980]"
           >
             {stores.map(store => (
               <option key={store.value} value={store.value}>{store.label}</option>
@@ -112,14 +157,14 @@ const AIForecasting: React.FC = () => {
 
       {/* Forecast Range Selector */}
       <div className="flex space-x-2">
-        {[7, 14, 30].map((range) => (
+        {[7, 14, 30].map(range => (
           <button
             key={range}
             onClick={() => setForecastRange(range)}
             className={`px-3 py-2 rounded-full font-medium ${
               forecastRange === range
                 ? 'bg-[#043980] text-white'
-                : 'bg-gray-100 text-black border border-gray-600'
+                : 'bg-gray-100 text-black border-2 border-gray-600'
             }`}
           >
             {range}-Day
@@ -135,7 +180,9 @@ const AIForecasting: React.FC = () => {
               <Brain className="w-5 h-5 text-[#043980]" />
             </div>
             <div>
-              <p className="text-2xl font-bold">89%</p>
+              <p className="text-2xl font-bold">
+                {products.find(p => p.value === selectedProduct)?.accuracy ?? 'N/A'}%
+              </p>
               <p className="text-sm text-gray-300">Model Accuracy</p>
             </div>
           </div>
@@ -192,10 +239,10 @@ const AIForecasting: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="h-80">
+          <div className="h-80 mt-20 mr-4">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={demandData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E3A8A" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#BFDBFE" />
                 <XAxis
                   dataKey="date"
                   stroke="#BFDBFE"
@@ -259,21 +306,21 @@ const AIForecasting: React.FC = () => {
                     ></div>
                   </div>
                 </div>
-                <div className="w-full bg-gray-600 rounded-full h-2">
+                <div className="w-full bg-gray-100/80 rounded-full h-2">
                   <div
-                    className="h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-300"
+                    className="h-2 bg-gradient-to-r from-blue-300 to-blue-600 rounded-full transition-all duration-300"
                     style={{ width: `${factor.impact}%` }}
                   ></div>
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-6 p-4 bg-gray-700 rounded-lg">
+          <div className="mt-6 p-4 bg-gray-100/80 rounded-lg">
             <div className="flex items-center space-x-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-green-300" />
-              <span className="text-sm font-medium">Key Insights</span>
+              <TrendingUp className="w-4 h-4 text-green-700" />
+              <span className="text-sm font-medium text-black">Key Insights</span>
             </div>
-            <ul className="text-xs text-gray-300 space-y-1">
+            <ul className="text-xs text-gray-700 space-y-1">
               <li>• Historical sales show 15% uptick this week</li>
               <li>• Local tech conference driving demand</li>
               <li>• Competitor out of stock until Friday</li>
@@ -287,7 +334,7 @@ const AIForecasting: React.FC = () => {
         <h3 className="text-lg font-semibold mb-6">Model Performance Analysis</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {products.map((product) => (
-            <div key={product.value} className="bg-blue-900/40 rounded-lg p-4">
+            <div key={product.value} className="bg-gray-100/20 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-sm">{product.label}</h4>
                 <ChevronRight className="w-4 h-4 text-gray-300" />
