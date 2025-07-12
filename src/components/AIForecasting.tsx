@@ -1,6 +1,23 @@
 import React, { useState } from 'react';
-import { TrendingUp, Brain, Calendar, Target, Activity, ChevronRight, Download } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from 'recharts';
+import {
+  TrendingUp,
+  Brain,
+  Calendar,
+  Target,
+  Activity,
+  ChevronRight,
+  Download
+} from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Area
+} from 'recharts';
 
 const AIForecasting: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState('SKU-001');
@@ -58,17 +75,17 @@ const AIForecasting: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-inter">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">AI Demand Forecasting</h2>
-          <p className="text-gray-400">Machine learning predictions based on multi-factor analysis</p>
+          <h2 className="text-2xl font-bold text-black">AI Demand Forecasting</h2>
+          <p className="text-gray-500">Machine learning predictions based on multi-factor analysis</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <select
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
-            className="bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="bg-gray-100 border-2 border-gray-700 text-black px-3 py-2 rounded-lg focus:ring-2 focus:ring-[#043980]"
           >
             {products.map(product => (
               <option key={product.value} value={product.value}>{product.label}</option>
@@ -77,7 +94,7 @@ const AIForecasting: React.FC = () => {
           <select
             value={selectedStore}
             onChange={(e) => setSelectedStore(e.target.value)}
-            className="bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="bg-gray-100 border-2 border-gray-700 text-black px-3 py-2 rounded-lg focus:ring-2 focus:ring-[#043980]"
           >
             {stores.map(store => (
               <option key={store.value} value={store.value}>{store.label}</option>
@@ -85,10 +102,10 @@ const AIForecasting: React.FC = () => {
           </select>
           <button
             onClick={exportCSV}
-            className="flex items-center space-x-2 bg-blue-600 px-3 py-2 rounded-lg text-white hover:bg-blue-700"
+            className="flex items-center space-x-2 border-2 border-black bg-gray-100 px-4 py-2 rounded-full text-black hover:bg-[#043980] hover:text-white transition ease-in-out duration-300"
           >
             <Download className="w-4 h-4" />
-            <span className="text-sm">Download</span>
+            <span>Download</span>
           </button>
         </div>
       </div>
@@ -99,8 +116,10 @@ const AIForecasting: React.FC = () => {
           <button
             key={range}
             onClick={() => setForecastRange(range)}
-            className={`px-3 py-2 rounded-lg ${
-              forecastRange === range ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+            className={`px-3 py-2 rounded-full font-medium ${
+              forecastRange === range
+                ? 'bg-[#043980] text-white'
+                : 'bg-gray-100 text-black border border-gray-600'
             }`}
           >
             {range}-Day
@@ -110,85 +129,86 @@ const AIForecasting: React.FC = () => {
 
       {/* AI Model Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gray-800 rounded-xl p-6">
+        <div className="bg-[#043980] rounded-xl p-6 text-white">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Brain className="w-5 h-5" />
+            <div className="w-10 h-10 bg-white/80 rounded-lg flex items-center justify-center">
+              <Brain className="w-5 h-5 text-[#043980]" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">89%</p>
-              <p className="text-sm text-gray-400">Model Accuracy</p>
+              <p className="text-2xl font-bold">89%</p>
+              <p className="text-sm text-gray-300">Model Accuracy</p>
             </div>
           </div>
         </div>
-        <div className="bg-gray-800 rounded-xl p-6">
+        <div className="bg-[#043980] rounded-xl p-6 text-white">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-              <Target className="w-5 h-5" />
+            <div className="w-10 h-10 bg-green-100/80 rounded-lg flex items-center justify-center">
+              <Target className="w-5 h-5 text-green-700" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">247</p>
-              <p className="text-sm text-gray-400">Predictions Today</p>
+              <p className="text-2xl font-bold">247</p>
+              <p className="text-sm text-gray-300">Predictions Today</p>
             </div>
           </div>
         </div>
-        <div className="bg-gray-800 rounded-xl p-6">
+        <div className="bg-[#043980] rounded-xl p-6 text-white">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
-              <Activity className="w-5 h-5" />
+            <div className="w-10 h-10 bg-purple-100/80 rounded-lg flex items-center justify-center">
+              <Activity className="w-5 h-5 text-purple-700" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">12</p>
-              <p className="text-sm text-gray-400">Data Sources</p>
+              <p className="text-2xl font-bold">12</p>
+              <p className="text-sm text-gray-300">Data Sources</p>
             </div>
           </div>
         </div>
-        <div className="bg-gray-800 rounded-xl p-6">
+        <div className="bg-[#043980] rounded-xl p-6 text-white">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-amber-600 rounded-lg flex items-center justify-center">
-              <Calendar className="w-5 h-5" />
+            <div className="w-10 h-10 bg-yellow-100/80 rounded-lg flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-yellow-700" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{forecastRange}</p>
-              <p className="text-sm text-gray-400">Days Forecast</p>
+              <p className="text-2xl font-bold">{forecastRange}</p>
+              <p className="text-sm text-gray-300">Days Forecast</p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Demand Chart + Factors */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Demand Forecast Chart */}
-        <div className="lg:col-span-2 bg-gray-800 rounded-xl p-6">
+        {/* Forecast Chart */}
+        <div className="lg:col-span-2 bg-[#043980] rounded-xl p-6 text-white">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">Demand Forecast ({forecastRange}-Day)</h3>
+            <h3 className="text-lg font-semibold">Demand Forecast ({forecastRange}-Day)</h3>
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-gray-400">Predicted</span>
+                <div className="w-3 h-3 bg-blue-400 rounded-full" />
+                <span className="text-gray-200">Predicted</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-gray-400">Actual</span>
+                <div className="w-3 h-3 bg-green-400 rounded-full" />
+                <span className="text-gray-200">Actual</span>
               </div>
             </div>
           </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={demandData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#1E3A8A" />
                 <XAxis
                   dataKey="date"
-                  stroke="#9CA3AF"
-                  tick={{ fill: '#9CA3AF' }}
+                  stroke="#BFDBFE"
+                  tick={{ fill: '#BFDBFE' }}
                   tickFormatter={(value) =>
                     new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                   }
                 />
-                <YAxis stroke="#9CA3AF" tick={{ fill: '#9CA3AF' }} />
+                <YAxis stroke="#BFDBFE" tick={{ fill: '#BFDBFE' }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#1F2937',
-                    border: '1px solid #374151',
+                    backgroundColor: '#1E3A8A',
+                    border: '1px solid #93C5FD',
                     borderRadius: '8px',
                     color: '#F9FAFB'
                   }}
@@ -197,19 +217,19 @@ const AIForecasting: React.FC = () => {
                   type="monotone"
                   dataKey="predicted"
                   stroke="none"
-                  fill="rgba(59, 130, 246, 0.2)"
+                  fill="rgba(147, 197, 253, 0.2)"
                 />
                 <Line
                   type="monotone"
                   dataKey="predicted"
-                  stroke="#3B82F6"
+                  stroke="#60A5FA"
                   strokeWidth={3}
                   dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="actual"
-                  stroke="#10B981"
+                  stroke="#34D399"
                   strokeWidth={3}
                   dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
                 />
@@ -218,28 +238,28 @@ const AIForecasting: React.FC = () => {
           </div>
         </div>
 
-        {/* Influencing Factors */}
-        <div className="bg-gray-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">Demand Factors</h3>
+        {/* Factors */}
+        <div className="bg-[#043980] rounded-xl p-6 text-white">
+          <h3 className="text-lg font-semibold mb-6">Demand Factors</h3>
           <div className="space-y-4">
             {factorsData.map((factor, index) => (
               <div key={index} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-300">{factor.factor}</span>
+                  <span className="text-sm">{factor.factor}</span>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-white">{factor.impact}%</span>
+                    <span className="text-sm font-medium">{factor.impact}%</span>
                     <div
                       className={`w-2 h-2 rounded-full ${
                         factor.trend === 'positive'
-                          ? 'bg-green-500'
+                          ? 'bg-green-400'
                           : factor.trend === 'negative'
-                          ? 'bg-red-500'
-                          : 'bg-gray-500'
+                          ? 'bg-red-400'
+                          : 'bg-gray-300'
                       }`}
                     ></div>
                   </div>
                 </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-gray-600 rounded-full h-2">
                   <div
                     className="h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-300"
                     style={{ width: `${factor.impact}%` }}
@@ -250,10 +270,10 @@ const AIForecasting: React.FC = () => {
           </div>
           <div className="mt-6 p-4 bg-gray-700 rounded-lg">
             <div className="flex items-center space-x-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-green-400" />
-              <span className="text-sm font-medium text-white">Key Insights</span>
+              <TrendingUp className="w-4 h-4 text-green-300" />
+              <span className="text-sm font-medium">Key Insights</span>
             </div>
-            <ul className="text-xs text-gray-400 space-y-1">
+            <ul className="text-xs text-gray-300 space-y-1">
               <li>• Historical sales show 15% uptick this week</li>
               <li>• Local tech conference driving demand</li>
               <li>• Competitor out of stock until Friday</li>
@@ -263,30 +283,32 @@ const AIForecasting: React.FC = () => {
       </div>
 
       {/* Model Performance */}
-      <div className="bg-gray-800 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-6">Model Performance Analysis</h3>
+      <div className="bg-[#043980] rounded-xl p-6 text-white">
+        <h3 className="text-lg font-semibold mb-6">Model Performance Analysis</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {products.map((product) => (
-            <div key={product.value} className="bg-gray-700 rounded-lg p-4">
+            <div key={product.value} className="bg-blue-900/40 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-white text-sm">{product.label}</h4>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <h4 className="font-medium text-sm">{product.label}</h4>
+                <ChevronRight className="w-4 h-4 text-gray-300" />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Accuracy</span>
-                  <span className="text-white font-medium">{product.accuracy}%</span>
+                  <span className="text-gray-300">Accuracy</span>
+                  <span className="font-medium">{product.accuracy}%</span>
                 </div>
                 <div className="w-full bg-gray-600 rounded-full h-2">
                   <div
-                    className="h-2 bg-green-500 rounded-full"
+                    className="h-2 bg-green-400 rounded-full"
                     style={{ width: `${product.accuracy}%` }}
                   ></div>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Last 30 days</span>
+                  <span className="text-gray-400">Last 30 days</span>
                   <span
-                    className={`${product.accuracy > 85 ? 'text-green-400' : 'text-yellow-400'}`}
+                    className={`${
+                      product.accuracy > 85 ? 'text-green-300' : 'text-yellow-300'
+                    }`}
                   >
                     {product.accuracy > 85 ? 'Excellent' : 'Good'}
                   </span>
