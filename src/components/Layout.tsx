@@ -24,7 +24,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
     { id: 'forecast', label: 'AI Forecasting', icon: TrendingUp },
     { id: 'transfers', label: 'Redistributions', icon: Package },
     { id: 'dashboard', label: 'Impact Dashboard', icon: BarChart3 },
-    { id: 'Routing Engine', label: 'Routing Engine', icon: RouteIcon }
+    { id: 'Routing Engine', label: 'Routing Engine', icon: RouteIcon },
+    { id: 'surplusRescue', label: 'Surplus Rescue', icon: Package }
   ];
 
   const notifications = [

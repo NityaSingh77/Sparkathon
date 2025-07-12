@@ -109,7 +109,7 @@ const TransferSuggestions: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search product..."
-            className="bg-gray-100 border-2 border-gray-700 text-black px-3 py-2 rounded-lg focus:ring-2 focus:ring-[#043980]"
+            className="bg-gray-100 border-2 border-gray-700 text-black px-4 py-2 rounded-full focus:ring-2 focus:ring-[#043980]"
           />
           <select
             value={filter}

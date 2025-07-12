@@ -1,84 +1,101 @@
 // SurplusRescueNetwork.tsx
 import React from 'react';
+import { ArrowUpRight } from 'lucide-react';
 
 const SurplusRescueNetwork: React.FC = () => {
   const surplusItems = [
     {
       id: 1,
       store: 'Walmart Supercenter - Uptown',
-      status: 'Overstocked',
-      quantity: 120,
       sku: 'SKU-789',
-      action: 'Suggest Discount',
+      productName: 'Organic Baby Formula',
+      surplusUnits: 120,
+      forecastDemand: 30,
+      daysToExpire: 25,
+      action: 'Suggest 20% Discount',
+      reason: 'Slow moving stock & nearing expiry'
     },
     {
       id: 2,
       store: 'Walmart Neighborhood Market - Suburbs',
-      status: 'Overstocked',
-      quantity: 80,
       sku: 'SKU-456',
-      action: 'Route to Nearby Store',
+      productName: 'Bluetooth Headphones',
+      surplusUnits: 80,
+      forecastDemand: 18,
+      daysToExpire: null,
+      action: 'Route to Downtown Store',
+      reason: 'Nearby store has rising demand'
     },
     {
       id: 3,
       store: 'Walmart Express - Downtown',
-      status: 'Overstocked',
-      quantity: 50,
       sku: 'SKU-123',
-      action: 'Flag for E-commerce',
-    },
+      productName: 'Electric Kettle',
+      surplusUnits: 50,
+      forecastDemand: 22,
+      daysToExpire: null,
+      action: 'Flag for E-commerce Boost',
+      reason: 'E-commerce traffic is trending up'
+    }
   ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Surplus Rescue Network
-        </h1>
+    <div className="space-y-10">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold text-gray-900">Surplus Rescue Network</h1>
         <p className="text-gray-600">
-          Smart actions for stores with high overstock — suggest discounts, route to low-stock stores, and flag for e-commerce priority.
+          Intelligent recovery for overstocked inventory — from discounting and redistribution to digital prioritization.
         </p>
       </div>
 
-      {/* Metrics */}
+      {/* Metrics Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-green-600 text-white rounded-lg p-6 shadow">
-          <div className="text-sm uppercase">Stores Flagged</div>
+        <div className="bg-rose-600 text-white rounded-lg p-6 shadow">
+          <div className="text-sm uppercase">Stores Affected</div>
           <div className="mt-2 text-3xl font-bold">3</div>
         </div>
-        <div className="bg-blue-600 text-white rounded-lg p-6 shadow">
-          <div className="text-sm uppercase">Units in Overstock</div>
+        <div className="bg-yellow-600 text-white rounded-lg p-6 shadow">
+          <div className="text-sm uppercase">Surplus Units</div>
           <div className="mt-2 text-3xl font-bold">250</div>
         </div>
-        <div className="bg-purple-600 text-white rounded-lg p-6 shadow">
-          <div className="text-sm uppercase">Actions Suggested</div>
+        <div className="bg-indigo-600 text-white rounded-lg p-6 shadow">
+          <div className="text-sm uppercase">Suggested Actions</div>
           <div className="mt-2 text-3xl font-bold">3</div>
         </div>
       </div>
 
-      {/* Surplus List */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b text-lg font-semibold">
-          Overstock Items
-        </div>
-        <div className="divide-y">
-          {surplusItems.map((item) => (
-            <div key={item.id} className="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center">
-              <div className="flex-1">
-                <div className="font-bold text-gray-800">{item.store}</div>
-                <div className="text-sm text-gray-500">SKU: {item.sku}</div>
-                <div className="text-sm text-gray-500">
-                  {item.status} — {item.quantity} units
-                </div>
-              </div>
-              <div className="mt-2 sm:mt-0">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  {item.action}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Surplus Table */}
+      <div className="overflow-hidden shadow rounded-lg border border-gray-200">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Store</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surplus Units</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Forecast Demand</th>
+              <th className="px-8 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {surplusItems.map((item) => (
+              <tr key={item.id}>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.store}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{item.sku}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{item.productName}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{item.surplusUnits}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{item.forecastDemand}</td>
+                <td className="px-6 py-4">
+                  <span className="inline-flex items-center px-6 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    {item.action}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">{item.reason}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
