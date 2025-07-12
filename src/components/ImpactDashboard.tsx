@@ -41,21 +41,20 @@ const ImpactDashboard: React.FC = () => {
   ];
 
   const handleDownload = () => {
-    // Implement export to CSV or PDF functionality here
     alert("Download initiated...");
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-inter">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Impact Dashboard</h2>
+          <h2 className="text-2xl font-bold text-black">Impact Dashboard</h2>
           <p className="text-gray-400">Real-time metrics showing the business impact of AI-driven redistribution</p>
         </div>
-        <div className="flex space-x-4 mt-4 md:mt-0">
+        <div className="flex space-x-4">
           <select
-            className="bg-gray-700 text-white p-2 rounded-lg text-sm"
+            className="bg-gray-100 border-2 border-gray-700 text-black px-3 py-2 rounded-lg focus:ring-2 focus:ring-[#043980]"
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
           >
@@ -65,7 +64,7 @@ const ImpactDashboard: React.FC = () => {
           </select>
           <button
             onClick={handleDownload}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            className="flex items-center space-x-2 border-2 border-black bg-gray-100 px-4 py-2 rounded-full text-black hover:bg-[#043980] hover:text-white transition ease-in-out duration-300"
           >
             <Download className="w-4 h-4" />
             <span>Download Report</span>
@@ -75,7 +74,6 @@ const ImpactDashboard: React.FC = () => {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Savings */}
         <MetricCard
           icon={<DollarSign className="w-6 h-6" />}
           change="+12%"
@@ -84,8 +82,6 @@ const ImpactDashboard: React.FC = () => {
           label="Total Cost Savings"
           gradient="from-green-600 to-green-700"
         />
-
-        {/* CO2 Reduction */}
         <MetricCard
           icon={<Leaf className="w-6 h-6" />}
           change="-8%"
@@ -94,8 +90,6 @@ const ImpactDashboard: React.FC = () => {
           label="CO₂ Reduced (lbs)"
           gradient="from-blue-600 to-blue-700"
         />
-
-        {/* Stockouts Avoided */}
         <MetricCard
           icon={<Package className="w-6 h-6" />}
           change="97% success rate"
@@ -104,8 +98,6 @@ const ImpactDashboard: React.FC = () => {
           label="Stockouts Avoided"
           gradient="from-purple-600 to-purple-700"
         />
-
-        {/* Forecast Accuracy */}
         <MetricCard
           icon={<Target className="w-6 h-6" />}
           change="+3% this month"
@@ -118,7 +110,6 @@ const ImpactDashboard: React.FC = () => {
 
       {/* Chart Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Cost Savings Trend */}
         <ChartCard title="Cost Savings Trend">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={savingsData}>
@@ -139,7 +130,6 @@ const ImpactDashboard: React.FC = () => {
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* Efficiency Breakdown */}
         <ChartCard title="Efficiency Breakdown">
           <div className="flex items-center h-80">
             <div className="w-1/2 h-80">
@@ -193,7 +183,7 @@ const ImpactDashboard: React.FC = () => {
             <YAxis stroke="#9CA3AF" tick={{ fill: '#9CA3AF' }} />
             <RechartsTooltip
               contentStyle={{
-                backgroundColor: '#1F2937',
+                backgroundColor: '#043980',
                 border: '1px solid #374151',
                 borderRadius: '8px',
                 color: '#F9FAFB'
@@ -230,7 +220,10 @@ const ImpactDashboard: React.FC = () => {
   );
 };
 
+export default ImpactDashboard;
+
 // Reusable Components
+
 type MetricCardProps = {
   icon: React.ReactNode;
   change: string;
@@ -260,7 +253,7 @@ type ChartCardProps = {
 };
 
 const ChartCard: React.FC<ChartCardProps> = ({ title, children }) => (
-  <div className="bg-gray-800 rounded-xl p-6">
+  <div className="bg-[#003366] rounded-xl p-6">
     <h3 className="text-lg font-semibold text-white mb-6">{title}</h3>
     <div className="h-80">{children}</div>
   </div>
@@ -273,13 +266,11 @@ type QuickStatProps = {
 };
 
 const QuickStat: React.FC<QuickStatProps> = ({ icon, label, value }) => (
-  <div className="bg-gray-800 rounded-xl p-4">
+  <div className="bg-[#003366] rounded-xl p-4">
     <div className="flex items-center space-x-2 mb-2">
       {icon}
-      <span className="text-sm text-gray-400">{label}</span>
+      <span className="text-sm text-gray-200">{label}</span>
     </div>
     <p className="text-xl font-bold text-white">{value}</p>
   </div>
 );
-
-export default ImpactDashboard;
