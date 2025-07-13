@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import { inventoryData } from '../data/inventory.js';
+
 const router = express.Router();
-const inventoryData = require('../data/inventory');  // Replace with real DB later
 
 router.get('/', (req, res) => {
   const { sku } = req.query;
@@ -18,4 +19,4 @@ router.get('/', (req, res) => {
   res.json(filteredInventory);
 });
 
-module.exports = router;
+export default router;

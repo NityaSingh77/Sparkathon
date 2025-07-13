@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import { storesData } from '../data/stores.js';
+
 const router = express.Router();
-const storesData = require('../data/stores');  // Replace with real DB later
 
 router.get('/', (req, res) => {
   res.json(storesData);
 });
 
-module.exports = router;
+export default router;
