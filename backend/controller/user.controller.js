@@ -1,15 +1,7 @@
-import express from "express";
-import User from "../models/user.js";
-import wrapAsync from "../utils/wrapAsync.js";
+import User from "../models/user.model.js";
 import passport from "passport";
 
-const router = express.Router();
-
-router.get("/signup", (req, res) => {
-    res.json({ message: "Signup page" });
-});
-
-router.post("/signup", wrapAsync(async (req, res) => {
+export const userSignup = async (req, res) => {
     try {
         let { username, email, password } = req.body;
         
@@ -43,40 +35,4 @@ router.post("/signup", wrapAsync(async (req, res) => {
             code: err.code
         });
     }
-}));
-
-router.get("/login", (req, res) => {
-    res.json({ message: "Login page" });
-});
-
-router.post("/login", passport.authenticate("local", { failureRedirect: "/login", failureFlash: true }), async (req, res) => {
-    res.json({ success: true, user: req.user });
-});
-
-// Check if user is authenticated
-router.get("/check-auth", (req, res) => {
-    if (req.isAuthenticated()) {
-        res.json({ 
-            authenticated: true, 
-            user: req.user 
-        });
-    } else {
-        res.status(401).json({ 
-            authenticated: false, 
-            message: "Not authenticated" 
-        });
-    }
-});
-
-// Logout route
-router.post("/logout", (req, res) => {
-    req.logout((err) => {
-        if (err) {
-            console.error("Logout error:", err);
-            return res.status(500).json({ error: "Logout failed" });
-        }
-        res.json({ success: true, message: "Logged out successfully" });
-    });
-});
-
-export default router;
+};

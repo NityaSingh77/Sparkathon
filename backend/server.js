@@ -1,82 +1,21 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import session from 'express-session';
-import methodOverride from 'method-override';
-import passport from 'passport';
-import localStrategy from 'passport-local';
-import ExpressError from './utils/ExpressError.js';
-import User from './models/user.js';
-import userRoutes from './routes/user.js';
-import storesRoutes from './routes/stores.js';
-import inventoryRoutes from './routes/inventory.js';
+import http from 'http';
+import app from './app.js';
+import connectToDb from './db/db.js';
 
-const app = express();
+const port = process.env.PORT || 5000;
 
-const MONGO_URL = "mongodb://127.0.0.1:27017/Sparkathon";
-
-main().then(() => {
-    console.log("connected to DB");
-}).catch(err => {
-    console.log(err);
-});
-
-async function main() {
-    await mongoose.connect(MONGO_URL);
+async function startServer() {
+    try {
+        await connectToDb();
+        const server = http.createServer(app);
+        
+        server.listen(port, () => {
+            console.log(`Server running on port ${port}`);
+        });
+    } catch (error) {
+        console.error('Server startup failed', error);
+        process.exit(1);
+    }
 }
 
-// CORS middleware
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:5173'); // Vite dev server
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
-    if (req.method === 'OPTIONS') {
-        res.sendStatus(200);
-    } else {
-        next();
-    }
-});
-
-// Middleware
-app.use(express.json()); // Add this for JSON parsing
-app.use(express.urlencoded({ extended: true }));
-app.use(methodOverride("_method"));
-
-const sessionOptions = {
-    secret: "mysupersecret",
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-        expires: Date.now() + 7 * 24 * 24 * 60 * 60 * 1000,   //time in millisecond
-        maxAge: 7 * 24 * 24 * 60 * 60 * 1000,
-        httpOnly: true,   //to prevent XSS Attack
-        secure: false, // Set to true in production with HTTPS
-        sameSite: 'lax'
-    },
-};
-
-app.use(session(sessionOptions));
-
-app.use(passport.initialize());
-app.use(passport.session());
-passport.use(new localStrategy(User.authenticate()));
-
-// use static serialize and deserialize of model for passport session support
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
-
-app.use('/api/stores', storesRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/user', userRoutes);
-
-app.all('*', (req, res, next) => {
-    next(new ExpressError(404, "Page not Found"));
-});
-
-app.use((err, req, res, next) => {
-    let { statusCode = 500, message = "Something Went Wrong" } = err;
-    res.status(statusCode).json({ error: message });
-});
-
-app.listen(5000, () => console.log('Server running'));
+startServer();
