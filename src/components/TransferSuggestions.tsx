@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowRight, Clock, DollarSign, MapPin, CheckCircle, XCircle, AlertCircle, Download } from 'lucide-react';
+import { FaMagnifyingGlass } from "react-icons/fa6";
 import { transferSuggestions, stores } from '../data/mockData';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const additionalProducts = [
   'Sony Noise Cancelling Headphones',
@@ -35,8 +37,10 @@ const isValidTransfer = (suggestion: any) => {
 const TransferSuggestions: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [search, setSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [approvedTransfers, setApprovedTransfers] = useState<string[]>([]);
   const [rejectedTransfers, setRejectedTransfers] = useState<string[]>([]);
+  const { addNotification } = useNotifications();
 
   const getStoreName = (storeId: string) => stores.find(store => store.id === storeId)?.name || 'Unknown Store';
 
@@ -55,11 +59,43 @@ const TransferSuggestions: React.FC = () => {
   const handleApprove = (id: string) => {
     setApprovedTransfers([...approvedTransfers, id]);
     setRejectedTransfers(rejectedTransfers.filter(r => r !== id));
+    
+    // Find the suggestion to get store names
+    const suggestion = allSuggestions.find(s => s.id === id);
+    if (suggestion) {
+      const fromStore = getStoreName(suggestion.fromStoreId);
+      const toStore = getStoreName(suggestion.toStoreId);
+      addNotification({
+        type: 'approve',
+        message: `Distribution from ${fromStore} to ${toStore} has been approved.`
+      });
+    }
   };
 
   const handleReject = (id: string) => {
     setRejectedTransfers([...rejectedTransfers, id]);
     setApprovedTransfers(approvedTransfers.filter(a => a !== id));
+    
+    // Find the suggestion to get store names
+    const suggestion = allSuggestions.find(s => s.id === id);
+    if (suggestion) {
+      const fromStore = getStoreName(suggestion.fromStoreId);
+      const toStore = getStoreName(suggestion.toStoreId);
+      addNotification({
+        type: 'reject',
+        message: `Distribution from ${fromStore} to ${toStore} has been rejected.`
+      });
+    }
+  };
+
+  const handleSearch = () => {
+    setSearch(searchTerm);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const exportCSV = () => {
@@ -94,39 +130,40 @@ const TransferSuggestions: React.FC = () => {
   })
   .filter(s => isValidTransfer(s));
 
+  const additionalSuggestions = useMemo(() => 
+    additionalProducts.map((product, index) => {
+      const distance = parseFloat((Math.random() * 50).toFixed(1));
+      const cpiFactor = 0.95;
+      const fuelCost = cpiFactor * 0.03;
+      const co2Impact = distance * CO2_PER_KM;
+      const estimatedSavings = Math.floor(Math.random() * 500) + 50;
 
+      return {
+        id: `new-${index}`,
+        fromStoreId: stores[0]?.id || '',
+        toStoreId: stores[1]?.id || '',
+        productName: product,
+        quantity: Math.floor(Math.random() * 20) + 1,
+        distance,
+        estimatedSavings,
+        urgency: ['critical', 'high', 'medium', 'low'][index % 4],
+        confidence: Math.random(),
+        reason: 'System generated suggestion',
+        sku: `SKU-${index + 1000}`,
+        surplus: 100,
+        shortage: 150,
+        cpiFactor,
+        cpiIndex: cpiFactor, // added to maintain consistency
+        fuelCost,
+        co2Impact,
+        costEffectivenessScore: calculateCostEffectiveness(estimatedSavings, fuelCost, co2Impact),
+      };
+    }).filter(s => isValidTransfer(s)), []
+  );
 
   const allSuggestions = [
     ...enrichedSuggestions,
-    ...additionalProducts.map((product, index) => {
-  const distance = parseFloat((Math.random() * 50).toFixed(1));
-  const cpiFactor = 0.95;
-  const fuelCost = cpiFactor * 0.03;
-  const co2Impact = distance * CO2_PER_KM;
-  const estimatedSavings = Math.floor(Math.random() * 500) + 50;
-
-  return {
-    id: `new-${index}`,
-    fromStoreId: stores[0]?.id || '',
-    toStoreId: stores[1]?.id || '',
-    productName: product,
-    quantity: Math.floor(Math.random() * 20) + 1,
-    distance,
-    estimatedSavings,
-    urgency: ['critical', 'high', 'medium', 'low'][index % 4],
-    confidence: Math.random(),
-    reason: 'System generated suggestion',
-    sku: `SKU-${index + 1000}`,
-    surplus: 100,
-    shortage: 150,
-    cpiFactor,
-    cpiIndex: cpiFactor, // added to maintain consistency
-    fuelCost,
-    co2Impact,
-    costEffectivenessScore: calculateCostEffectiveness(estimatedSavings, fuelCost, co2Impact),
-  };
-}).filter(s => isValidTransfer(s))
-
+    ...additionalSuggestions
   ];
 
   const filteredSuggestions = allSuggestions.filter(s => {
@@ -152,13 +189,22 @@ const TransferSuggestions: React.FC = () => {
           <p className="text-gray-500">AI-optimized inventory transfer recommendations</p>
         </div>
         <div className="flex items-center space-x-3">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search product..."
-            className="bg-gray-100 border-2 border-gray-700 text-black px-4 py-2 rounded-full focus:ring-2 focus:ring-[#043980]"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Search product..."
+              className="bg-gray-100 border-2 border-gray-700 text-black px-4 py-2 pr-10 rounded-full focus:ring-2 focus:ring-[#043980]"
+            />
+            <button
+              onClick={handleSearch}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-[#043980] transition-colors"
+            >
+              <FaMagnifyingGlass className="w-4 h-4" />
+            </button>
+          </div>
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as any)}

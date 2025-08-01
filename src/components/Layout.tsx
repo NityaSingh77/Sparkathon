@@ -9,6 +9,7 @@ import {
   Bell
 } from 'lucide-react';
 import logo from '../assets/logo.jpg';
+import { useNotifications } from '../contexts/NotificationContext';
 
 interface LayoutProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const { notifications, removeNotification } = useNotifications();
 
   const tabs = [
     { id: 'map', label: 'Store Map', icon: Map },
@@ -26,12 +28,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
     { id: 'dashboard', label: 'Impact Dashboard', icon: BarChart3 },
     { id: 'Routing Engine', label: 'Sustainability Insights', icon: RouteIcon },
     { id: 'surplusRescue', label: 'Surplus Rescue', icon: Package }
-  ];
-
-  const notifications = [
-    { id: 1, type: 'Low Stock', message: 'SKU #001 is running low at Store Walmart Downtown.' },
-    { id: 2, type: 'Overstock', message: 'SKU #002 is overstocked in Walmart Supercenter - Eastside.' },
-    { id: 3, type: 'Update', message: 'Stock redistribution has been completed.' }
   ];
 
   return (
@@ -76,11 +72,34 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
                 <div className="absolute top-12 right-0 w-80 bg-white shadow-lg rounded-lg z-50 overflow-hidden border border-gray-200">
                   <div className="px-4 py-2 border-b text-black font-semibold">Notifications</div>
                   <ul className="divide-y divide-gray-200 max-h-64 overflow-y-auto text-sm text-black">
-                    {notifications.map((note) => (
-                      <li key={note.id} className="px-4 py-3 hover:bg-gray-50">
-                        <strong>{note.type}:</strong> {note.message}
-                      </li>
-                    ))}
+                    {notifications.length === 0 ? (
+                      <li className="px-4 py-3 text-gray-500">No notifications</li>
+                    ) : (
+                      notifications.map((note) => (
+                        <li key={note.id} className="px-4 py-3 hover:bg-gray-50 flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className={`w-2 h-2 rounded-full ${
+                                note.type === 'approve' ? 'bg-green-500' :
+                                note.type === 'reject' ? 'bg-red-500' :
+                                note.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                              }`}></span>
+                              <strong className="capitalize">{note.type}:</strong>
+                            </div>
+                            <p className="text-sm mt-1">{note.message}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {note.timestamp.toLocaleTimeString()}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => removeNotification(note.id)}
+                            className="text-gray-400 hover:text-red-500 text-xs ml-2"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))
+                    )}
                   </ul>
                   <div className="px-4 py-2 text-right">
                     <button
