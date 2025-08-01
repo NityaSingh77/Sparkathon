@@ -7,13 +7,7 @@ export const fetchProducts = async () => {
   return [
     { value: 'SKU-001', label: 'iPhone 15 Pro Max', accuracy: 89 },
     { value: 'SKU-002', label: 'Samsung 65" 4K TV', accuracy: 85 },
-    { value: 'SKU-003', label: 'Nike Air Max Sneakers', accuracy: 91 },
-    { value: 'SKU-004', label: 'Sony Noise Cancelling Headphones', accuracy: 80 },
-    { value: 'SKU-005', label: 'Fitbit Charge 6', accuracy: 67 },
-    { value: 'SKU-006', label: 'GoPro Hero 12', accuracy: 87 },
-    { value: 'SKU-007', label: 'Apple Watch Series 9', accuracy: 86 },
-    { value: 'SKU-008', label: 'Canon EOS R6 Camera', accuracy: 84 },
-    { value: 'SKU-009', label: 'KitchenAid Stand Mixer', accuracy: 84 }
+    { value: 'SKU-003', label: 'Nike Air Max Sneakers', accuracy: 91 }
   ];
 };
 

@@ -88,8 +88,6 @@ const getSuggestions = (): Suggestion[] => {
     { value: 'SKU-001', label: 'iPhone 15 Pro Max' },
     { value: 'SKU-002', label: 'Samsung 65\" 4K TV' },
     { value: 'SKU-003', label: 'Nike Air Max Sneakers' },
-    { value: 'SKU-004', label: 'KitchenAid Stand Mixer' },
-    { value: 'SKU-005', label: 'Organic Baby Formula' }
   ];
 
   return (

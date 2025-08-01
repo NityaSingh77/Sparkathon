@@ -3,7 +3,7 @@ import { Store, StoreInventory, TransferSuggestion, ForecastData, ImpactMetrics,
 export const stores: Store[] = [
   {
     id: 'store-001',
-    name: 'Walmart Supercenter - Downtown Dallas',
+    name: 'Downtown Supercenter',
     address: '123 Main St, Dallas, TX 75201',
     lat: 32.7767,
     lng: -96.7970,
@@ -15,7 +15,7 @@ export const stores: Store[] = [
   },
   {
     id: 'store-002',
-    name: 'Walmart Neighborhood Market - Uptown Dallas',
+    name: 'Uptown Neighborhood',
     address: '456 Oak Ave, Dallas, TX 75202',
     lat: 32.7877,
     lng: -96.8070,
@@ -27,7 +27,7 @@ export const stores: Store[] = [
   },
   {
     id: 'store-003',
-    name: 'Walmart Supercenter - Dallas Suburbs',
+    name: 'Suburbs Supercenter',
     address: '789 Pine Rd, Dallas, TX 75203',
     lat: 32.7667,
     lng: -96.7870,
@@ -146,28 +146,28 @@ const generateStockItems = (): StockItem[] => [
     price: 129.99,
     lastUpdated: new Date().toISOString()
   },
-  {
-    sku: 'SKU-004',
-    productName: 'KitchenAid Stand Mixer',
-    category: 'Home & Kitchen',
-    currentStock: Math.floor(Math.random() * 20) + 5,
-    minThreshold: 8,
-    maxThreshold: 35,
-    demandForecast: Math.floor(Math.random() * 12) + 8,
-    price: 349.99,
-    lastUpdated: new Date().toISOString()
-  },
-  {
-    sku: 'SKU-005',
-    productName: 'Organic Baby Formula',
-    category: 'Baby & Kids',
-    currentStock: Math.floor(Math.random() * 80) + 15,
-    minThreshold: 20,
-    maxThreshold: 120,
-    demandForecast: Math.floor(Math.random() * 35) + 25,
-    price: 28.99,
-    lastUpdated: new Date().toISOString()
-  }
+  // {
+  //   sku: 'SKU-004',
+  //   productName: 'KitchenAid Stand Mixer',
+  //   category: 'Home & Kitchen',
+  //   currentStock: Math.floor(Math.random() * 20) + 5,
+  //   minThreshold: 8,
+  //   maxThreshold: 35,
+  //   demandForecast: Math.floor(Math.random() * 12) + 8,
+  //   price: 349.99,
+  //   lastUpdated: new Date().toISOString()
+  // },
+  // {
+  //   sku: 'SKU-005',
+  //   productName: 'Organic Baby Formula',
+  //   category: 'Baby & Kids',
+  //   currentStock: Math.floor(Math.random() * 80) + 15,
+  //   minThreshold: 20,
+  //   maxThreshold: 120,
+  //   demandForecast: Math.floor(Math.random() * 35) + 25,
+  //   price: 28.99,
+  //   lastUpdated: new Date().toISOString()
+  // }
 ];
 
 export const storeInventories: StoreInventory[] = [
@@ -449,7 +449,7 @@ export const transferSuggestions: TransferSuggestion[] = [
     fromStoreId: 'store-005',
     toStoreId: 'store-003',
     sku: 'SKU-1001',
-    productName: 'Canned Beans',
+    productName: 'iPhone 15 Pro Max',
     quantity: 160,
     urgency: 'high',
     estimatedSavings: 320,
@@ -470,7 +470,7 @@ export const transferSuggestions: TransferSuggestion[] = [
     fromStoreId: 'store-001',
     toStoreId: 'store-004',
     sku: 'SKU-1002',
-    productName: 'Baby Diapers',
+    productName: 'Samsung 65" 4K TV',
     quantity: 110,
     urgency: 'medium',
     estimatedSavings: 275,
@@ -491,9 +491,9 @@ export const transferSuggestions: TransferSuggestion[] = [
     fromStoreId: 'store-006',
     toStoreId: 'store-002',
     sku: 'SKU-1003',
-    productName: 'Toilet Paper',
+    productName: 'Nike Air Max Sneakers',
     quantity: 200,
-    urgency: 'critical',
+    urgency: 'medium',
     estimatedSavings: 500,
     distance: 31.2,
     reason: 'Urgent stockout risk in receiving store',
