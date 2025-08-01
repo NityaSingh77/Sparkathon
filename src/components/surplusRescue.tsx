@@ -58,7 +58,7 @@ const SurplusRescueNetwork: React.FC = () => {
           <div className="text-sm uppercase">Surplus Units</div>
           <div className="mt-2 text-3xl font-bold">250</div>
         </div>
-        <div className="bg-indigo-700 text-white rounded-lg p-6 shadow">
+        <div className="bg-green-700 text-white rounded-lg p-6 shadow">
           <div className="text-sm uppercase">Suggested Actions</div>
           <div className="mt-2 text-3xl font-bold">3</div>
         </div>

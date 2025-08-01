@@ -24,13 +24,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
     { id: 'forecast', label: 'AI Forecasting', icon: TrendingUp },
     { id: 'transfers', label: 'Redistributions', icon: Package },
     { id: 'dashboard', label: 'Impact Dashboard', icon: BarChart3 },
-    { id: 'Routing Engine', label: 'Routing Engine', icon: RouteIcon },
+    { id: 'Routing Engine', label: 'Sustainability Insights', icon: RouteIcon },
     { id: 'surplusRescue', label: 'Surplus Rescue', icon: Package }
   ];
 
   const notifications = [
-    { id: 1, type: 'Low Stock', message: 'SKU #123 is running low at Store A.' },
-    { id: 2, type: 'Overstock', message: 'SKU #456 is overstocked in Store B.' },
+    { id: 1, type: 'Low Stock', message: 'SKU #001 is running low at Store Walmart Downtown.' },
+    { id: 2, type: 'Overstock', message: 'SKU #002 is overstocked in Walmart Supercenter - Eastside.' },
     { id: 3, type: 'Update', message: 'Stock redistribution has been completed.' }
   ];
 

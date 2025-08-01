@@ -254,10 +254,10 @@ const AIForecasting: React.FC = () => {
                 <YAxis stroke="#BFDBFE" tick={{ fill: '#BFDBFE' }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#1E3A8A',
-                    border: '1px solid #93C5FD',
+                    backgroundColor: '#93C5FD',
+                    border: '1px solid #1E3A8A',
                     borderRadius: '8px',
-                    color: '#F9FAFB'
+                    color: 'black'
                   }}
                 />
                 <Area
@@ -269,14 +269,14 @@ const AIForecasting: React.FC = () => {
                 <Line
                   type="monotone"
                   dataKey="predicted"
-                  stroke="#60A5FA"
+                  stroke="#4e8cd6ff"
                   strokeWidth={3}
                   dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="actual"
-                  stroke="#34D399"
+                  stroke="#19ae78ff"
                   strokeWidth={3}
                   dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
                 />

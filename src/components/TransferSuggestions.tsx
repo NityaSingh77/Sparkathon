@@ -10,15 +10,35 @@ const additionalProducts = [
   'Canon EOS R6 Camera',
 ];
 
+const SURPLUS_THRESHOLD = 40;
+const SHORTAGE_THRESHOLD = 30;
+const CO2_PER_KM = 0.02; // kg CO₂/km
+
+const calculateCostEffectiveness = (savings: number, fuelCost: number, co2Impact: number) => {
+  const totalCost = fuelCost + co2Impact;
+  return savings - totalCost;
+};
+
+
+const isValidTransfer = (suggestion: any) => {
+  const surplusValid = suggestion.surplus > SURPLUS_THRESHOLD;
+  const shortageValid = suggestion.shortage > SHORTAGE_THRESHOLD;
+  const valueOfAvoidedLoss = suggestion.estimatedSavings ?? (Math.min(suggestion.surplus, suggestion.shortage) * 2);
+  const environmentalCost = suggestion.fuelCost + suggestion.co2Impact;
+  const cpiFavorable = suggestion.cpiFactor <= 1.0;
+  return surplusValid && shortageValid && valueOfAvoidedLoss > environmentalCost && cpiFavorable;
+};
+
+
+
+
 const TransferSuggestions: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [search, setSearch] = useState('');
   const [approvedTransfers, setApprovedTransfers] = useState<string[]>([]);
   const [rejectedTransfers, setRejectedTransfers] = useState<string[]>([]);
 
-  const getStoreName = (storeId: string) => {
-    return stores.find(store => store.id === storeId)?.name || 'Unknown Store';
-  };
+  const getStoreName = (storeId: string) => stores.find(store => store.id === storeId)?.name || 'Unknown Store';
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
@@ -30,29 +50,21 @@ const TransferSuggestions: React.FC = () => {
     }
   };
 
-  const getUrgencyIcon = (urgency: string) => {
-    switch (urgency) {
-      case 'critical': return <AlertCircle className="w-4 h-4" />;
-      case 'high': return <Clock className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
-    }
+  const getUrgencyIcon = (urgency: string) => urgency === 'critical' ? <AlertCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />;
+
+  const handleApprove = (id: string) => {
+    setApprovedTransfers([...approvedTransfers, id]);
+    setRejectedTransfers(rejectedTransfers.filter(r => r !== id));
   };
 
-  const handleApprove = (transferId: string) => {
-    setApprovedTransfers([...approvedTransfers, transferId]);
-    setRejectedTransfers(rejectedTransfers.filter(id => id !== transferId));
-  };
-
-  const handleReject = (transferId: string) => {
-    setRejectedTransfers([...rejectedTransfers, transferId]);
-    setApprovedTransfers(approvedTransfers.filter(id => id !== transferId));
+  const handleReject = (id: string) => {
+    setRejectedTransfers([...rejectedTransfers, id]);
+    setApprovedTransfers(approvedTransfers.filter(a => a !== id));
   };
 
   const exportCSV = () => {
     const headers = ['ID', 'From', 'To', 'Product', 'Quantity', 'Distance', 'Savings', 'Urgency'];
-    const rows = filteredSuggestions.map(s =>
-      [s.id, getStoreName(s.fromStoreId), getStoreName(s.toStoreId), s.productName, s.quantity, s.distance, s.estimatedSavings, s.urgency].join(',')
-    );
+    const rows = filteredSuggestions.map(s => [s.id, getStoreName(s.fromStoreId), getStoreName(s.toStoreId), s.productName, s.quantity, s.distance, s.estimatedSavings, s.urgency].join(','));
     const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -63,27 +75,64 @@ const TransferSuggestions: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const enrichedSuggestions = transferSuggestions
+  .map(s => {
+    const estimatedSavings = s.estimatedSavings ?? Math.min(s.surplus, s.shortage) * 2;
+    const quantity = Math.min(s.surplus, s.shortage);
+    const fuelCost = s.fuelCost ?? (s.cpiFactor * 0.03); // fallback
+    const co2Impact = s.co2Impact ?? (s.distance * CO2_PER_KM); // fallback
+
+    return {
+      ...s,
+      estimatedSavings,
+      quantity,
+      urgency: s.shortage > 150 ? 'critical' : s.shortage > 100 ? 'high' : s.shortage > 50 ? 'medium' : 'low',
+      costEffectivenessScore: calculateCostEffectiveness(estimatedSavings, fuelCost, co2Impact),
+      fuelCost,
+      co2Impact,
+    };
+  })
+  .filter(s => isValidTransfer(s));
+
+
+
   const allSuggestions = [
-    ...transferSuggestions,
-    ...additionalProducts.map((product, index) => ({
-      id: `new-${index}`,
-      fromStoreId: stores[0]?.id || '',
-      toStoreId: stores[1]?.id || '',
-      productName: product,
-      quantity: Math.floor(Math.random() * 20) + 1,
-      distance: parseFloat((Math.random() * 50).toFixed(1)),
-      estimatedSavings: Math.floor(Math.random() * 500) + 50,
-      urgency: ['critical', 'high', 'medium', 'low'][index % 4],
-      confidence: Math.random(),
-      reason: 'System generated suggestion',
-      sku: `SKU-${index + 1000}`,
-    }))
+    ...enrichedSuggestions,
+    ...additionalProducts.map((product, index) => {
+  const distance = parseFloat((Math.random() * 50).toFixed(1));
+  const cpiFactor = 0.95;
+  const fuelCost = cpiFactor * 0.03;
+  const co2Impact = distance * CO2_PER_KM;
+  const estimatedSavings = Math.floor(Math.random() * 500) + 50;
+
+  return {
+    id: `new-${index}`,
+    fromStoreId: stores[0]?.id || '',
+    toStoreId: stores[1]?.id || '',
+    productName: product,
+    quantity: Math.floor(Math.random() * 20) + 1,
+    distance,
+    estimatedSavings,
+    urgency: ['critical', 'high', 'medium', 'low'][index % 4],
+    confidence: Math.random(),
+    reason: 'System generated suggestion',
+    sku: `SKU-${index + 1000}`,
+    surplus: 100,
+    shortage: 150,
+    cpiFactor,
+    cpiIndex: cpiFactor, // added to maintain consistency
+    fuelCost,
+    co2Impact,
+    costEffectivenessScore: calculateCostEffectiveness(estimatedSavings, fuelCost, co2Impact),
+  };
+}).filter(s => isValidTransfer(s))
+
   ];
 
-  const filteredSuggestions = allSuggestions.filter(suggestion => {
-    const matchesFilter = filter === 'all' || suggestion.urgency === filter;
-    const matchesSearch = suggestion.productName.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
+  const filteredSuggestions = allSuggestions.filter(s => {
+    const matchesFilter = filter === 'all' || s.urgency === filter;
+    const matchesSearch = s.productName.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch && s.costEffectivenessScore > 0;
   });
 
   const urgencyStats = allSuggestions.reduce((acc, s) => {
@@ -91,9 +140,8 @@ const TransferSuggestions: React.FC = () => {
     return acc;
   }, {} as Record<string, number>);
 
-  const totalSavings = filteredSuggestions.reduce((sum, suggestion) => sum + suggestion.estimatedSavings, 0);
-  const averageDistance = filteredSuggestions.reduce((sum, suggestion) => sum + suggestion.distance, 0) / (filteredSuggestions.length || 1);
-
+  const totalSavings = filteredSuggestions.reduce((sum, s) => sum + s.estimatedSavings, 0);
+  const averageDistance = filteredSuggestions.reduce((sum, s) => sum + s.distance, 0) / (filteredSuggestions.length || 1);
   const pendingSuggestions = filteredSuggestions.filter(s => !approvedTransfers.includes(s.id) && !rejectedTransfers.includes(s.id));
 
   return (
@@ -249,6 +297,27 @@ const TransferSuggestions: React.FC = () => {
                         <span className="text-black font-semibold ml-1">{suggestion.sku}</span>
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-2">
+  <div>
+    <span className="text-gray-700">Fuel Cost:</span>
+    <span className="text-black font-semibold ml-1">${suggestion.fuelCost.toFixed(2)}</span>
+  </div>
+  <div>
+    <span className="text-gray-700">CO₂ Impact:</span>
+    <span className="text-black font-semibold ml-1">{suggestion.co2Impact.toFixed(2)} kg</span>
+  </div>
+  <div>
+    <span className="text-gray-700">CPI Index:</span>
+    <span className="text-black font-semibold ml-1">{suggestion.cpiIndex}</span>
+  </div>
+  <div>
+    <span className="text-gray-700">Effectiveness:</span>
+    <span className={`font-semibold ml-1 ${suggestion.costEffectivenessScore > 0 ? 'text-green-700' : 'text-red-700'}`}>
+      ${suggestion.costEffectivenessScore.toFixed(2)}
+    </span>
+  </div>
+</div>
+
                   </div>
                 </div>
 

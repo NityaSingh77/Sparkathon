@@ -1,4 +1,4 @@
-export interface Store {
+export type Store = {
   id: string;
   name: string;
   address: string;
@@ -7,7 +7,9 @@ export interface Store {
   region: string;
   manager: string;
   phone: string;
-}
+  cpiIndex: number;
+  costEffectivenessScore: number;
+};
 
 export interface StockItem {
   sku: string;
@@ -42,7 +44,16 @@ export interface TransferSuggestion {
   reason: string;
   confidence: number;
   createdAt: string;
+  surplus: number;
+  shortage: number;
+  fuelCost: number;
+  co2Impact: number;
+  cpiFactor: number;
+  isProfitable: boolean;
+  cpiIndex?: number; 
 }
+
+
 
 export interface ForecastData {
   sku: string;

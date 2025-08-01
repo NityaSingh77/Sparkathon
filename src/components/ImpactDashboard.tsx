@@ -96,8 +96,8 @@ const ImpactDashboard: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="#BFDBFE" />
               <XAxis dataKey="month" stroke="#BFDBFE" tick={{ fill: '#BFDBFE' }} />
               <YAxis stroke="#BFDBFE" tick={{ fill: '#BFDBFE' }} />
-              <RechartsTooltip contentStyle={{ backgroundColor: '#043980', border: '1px solid #BFDBFE', borderRadius: '8px', color: '#BFDBFE' }} formatter={(value) => [`$${value.toLocaleString()}`, 'Savings']} />
-              <Bar dataKey="savings" fill="#0ac888ff" radius={[4, 4, 0, 0]} />
+              <RechartsTooltip contentStyle={{ backgroundColor: '#BFDBFE', border: '1px solid #043980', borderRadius: '8px', color: 'black' }} formatter={(value) => [`$${value.toLocaleString()}`, 'Savings']} />
+              <Bar dataKey="savings" fill="#0cb17aff" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -112,7 +112,7 @@ const ImpactDashboard: React.FC = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <RechartsTooltip contentStyle={{ backgroundColor: '#043980', border: '1px solid #BFDBFE', borderRadius: '8px', color: '#BFDBFE' }} formatter={(value) => [`${value}%`, 'Impact']} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#BFDBFE', border: '1px solid #043980 ', borderRadius: '8px', color: 'black' }} formatter={(value) => [`${value}%`, 'Impact']} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -121,8 +121,8 @@ const ImpactDashboard: React.FC = () => {
                 <div key={index} className="flex items-center space-x-3">
                   <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }}></div>
                   <div>
-                    <p className="text-sm text-white">{item.category}</p>
-                    <p className="text-xs text-gray-400">{item.value}% impact</p>
+                    <p className="text-[18px] text-white">{item.category}</p>
+                    <p className="text-sm text-gray-400">{item.value}% impact</p>
                   </div>
                 </div>
               ))}
@@ -137,7 +137,7 @@ const ImpactDashboard: React.FC = () => {
             <CartesianGrid strokeDasharray="3 3" stroke="#BFDBFE" />
             <XAxis dataKey="week" stroke="#BFDBFE" tick={{ fill: '#BFDBFE' }} />
             <YAxis stroke="#BFDBFE" tick={{ fill: '#BFDBFE' }} />
-            <RechartsTooltip contentStyle={{ backgroundColor: '#043980', border: '1px solid #BFDBFE', borderRadius: '8px', color: '#F9FAFB' }} />
+            <RechartsTooltip contentStyle={{ backgroundColor: '#BFDBFE', border: '1px solid #043980', borderRadius: '8px', color: 'black' }} />
             <Line type="monotone" dataKey="accuracy" stroke="#3B82F6" strokeWidth={3} dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }} name="Forecast Accuracy %" />
             <Line type="monotone" dataKey="approved" stroke="#10B981" strokeWidth={3} dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }} name="Approval Rate %" />
           </LineChart>

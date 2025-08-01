@@ -101,7 +101,7 @@ const getSuggestions = (): Suggestion[] => {
           <p className="text-gray-500">Real-time inventory visualization across all locations</p>
         </div>
         <div className="flex items-center space-x-3">
-          <label className="text-sm text-gray-700">Category :</label>
+          <label className="text-sm text-gray-700">Product :</label>
           <select
             value={selectedSku}
             onChange={(e) => setSelectedSku(e.target.value)}
@@ -186,8 +186,8 @@ const getSuggestions = (): Suggestion[] => {
       {getSuggestions().map((sug, idx) => (
         <div key={idx} className="bg-gray-100/80 rounded-lg p-3 text-sm text-gray-300">
           <p><span className="text-black"><b>{sug.suggestedQty} units</b> of </span><span className="text-blue-800">{sug.sku}</span></p>
-          <p className="text-black">From: <span className="text-yellow-600">{sug.fromStore.name}</span></p>
-          <p className="text-black">To: <span className="text-red-700">{sug.toStore.name}</span></p>
+          <p className="text-black">From: <span className="text-yellow-600"><b>{sug.fromStore.name}</b></span></p>
+          <p className="text-black">To: <span className="text-red-700"><b>{sug.toStore.name}</b></span></p>
         </div>
       ))}
     </div>
