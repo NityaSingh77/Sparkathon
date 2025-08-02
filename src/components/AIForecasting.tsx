@@ -19,12 +19,15 @@ import {
   Area
 } from 'recharts';
 
-import { fetchProducts, fetchStores, fetchForecastData, fetchFactors } from '../data/mockApi';
+import aiforecastingMock from '../data/aiforecastingmock.json';
 
 const AIForecasting: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedStore, setSelectedStore] = useState('');
   const [forecastRange, setForecastRange] = useState(7);
+  const [predictionsToday, setPredictionsToday] = useState(0);
+  // Track previous selections to avoid double-counting on initial load
+  const [prevSelections, setPrevSelections] = useState<{product: string, store: string, range: number} | null>(null);
 
   type DemandDatum = { date: string; actual: number | null; predicted: number; confidence: number };
   const [demandData, setDemandData] = useState<DemandDatum[]>([]);
@@ -43,59 +46,171 @@ const AIForecasting: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Load products and stores on mount
+  // Load products and stores from JSON
   useEffect(() => {
-    async function loadInitialData() {
-      try {
-        setLoading(true);
-        const prods = await fetchProducts();
-        const strs = await fetchStores();
-        setProducts(prods);
-        setStores(strs);
-        // Select first by default
-        if (prods.length) setSelectedProduct(prods[0].value);
-        if (strs.length) setSelectedStore(strs[0].value);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to load initial data');
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      const productsJson = aiforecastingMock.products ?? [];
+      const products: Product[] = productsJson.map(p => ({
+        value: p.item_id ?? '',
+        label: p.name ?? '',
+        // Calculate accuracy as average of (actual/predicted) for all stores, last 30 days
+        accuracy: (() => {
+          let total = 0, count = 0;
+          (p.store_sales ?? []).forEach(store => {
+            (store.daily_data ?? []).slice(0, 30).forEach(d => {
+              if (d.predicted_sales !== undefined && d.actual_sales !== undefined) {
+                total += Math.min(100, Math.round(((d.actual_sales ?? 0) / (d.predicted_sales ?? 1)) * 100));
+                count++;
+              }
+            });
+          });
+          return count ? Math.round(total / count) : 0;
+        })()
+      }));
+      setProducts(products);
+
+      // Stores from first product (all stores are same for all products)
+      const stores: Store[] = (productsJson[0]?.store_sales ?? []).map(s => ({
+        value: s.store_id ?? '',
+        label: s.store ?? ''
+      }));
+      setStores(stores);
+
+      // Select first by default
+      if (products.length) setSelectedProduct(products[0].value);
+      if (stores.length) setSelectedStore(stores[0].value);
+      setLoading(false);
+
+      // On initial load, set predictionsToday to default forecastRange
+      setPredictionsToday(forecastRange);
+      setPrevSelections({
+        product: products.length ? products[0].value : '',
+        store: stores.length ? stores[0].value : '',
+        range: forecastRange
+      });
+    } catch (err) {
+      setError('Failed to load initial data');
+      setLoading(false);
     }
-    loadInitialData();
   }, []);
 
   // Fetch forecast and factors when selection changes
   useEffect(() => {
     if (!selectedProduct || !selectedStore) return;
-    async function loadForecastAndFactors() {
-      try {
-        setLoading(true);
-        const [forecast, factors] = await Promise.all([
-          fetchForecastData(selectedProduct, selectedStore, forecastRange),
-          fetchFactors(),
-        ]);
-        setDemandData(forecast);
-        setFactorsData(
-          factors.map(f =>
-            ({
-              ...f,
-              trend:
-                f.trend === 'positive'
-                  ? 'positive'
-                  : f.trend === 'negative'
-                  ? 'negative'
-                  : 'neutral'
-            } as Factor)
-          )
-        );
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to load forecast data');
-        setLoading(false);
+    setLoading(true);
+    try {
+      // Find product and store
+      const productObj = (aiforecastingMock.products ?? []).find(p => p.item_id === selectedProduct);
+      const storeObj = productObj?.store_sales?.find(s => s.store_id === selectedStore);
+
+      // Get N days from start
+      const rangeData = storeObj?.daily_data?.slice(0, forecastRange) ?? [];
+
+      // Demand data for graph
+      const demandData = rangeData.map(d => ({
+        date: d.date ?? '',
+        actual: d.actual_sales ?? null,
+        predicted: d.predicted_sales ?? 0,
+        confidence: Math.min(100, Math.round(((d.actual_sales ?? 0) / ((d.predicted_sales ?? 1))) * 100))
+      }));
+      setDemandData(demandData);
+
+      // Calculate dynamic accuracy for selected product/store/range
+      let totalAcc = 0, accCount = 0;
+      rangeData.forEach(d => {
+        if (d.predicted_sales !== undefined && d.actual_sales !== undefined) {
+          totalAcc += Math.min(100, Math.round(((d.actual_sales ?? 0) / (d.predicted_sales ?? 1)) * 100));
+          accCount++;
+        }
+      });
+      const dynamicAccuracy = accCount ? Math.round(totalAcc / accCount) : 0;
+
+      // Aggregate and average features for factors
+      const featureSums = {
+        unit_price: 0,
+        yesterday_sales: 0,
+        weekly_avg_sales: 0,
+        special_event: 0,
+        promotion_active: 0
+      };
+      let count = 0;
+      rangeData.forEach(d => {
+        const f = d.features ?? {};
+        featureSums.unit_price += f.unit_price ?? 0;
+        featureSums.yesterday_sales += f.yesterday_sales ?? 0;
+        featureSums.weekly_avg_sales += f.weekly_avg_sales ?? 0;
+        featureSums.special_event += f.special_event ?? 0;
+        featureSums.promotion_active += f.promotion_active ?? 0;
+        count++;
+      });
+      const avgFeatures = {
+        unit_price: count ? featureSums.unit_price / count : 0,
+        yesterday_sales: count ? featureSums.yesterday_sales / count : 0,
+        weekly_avg_sales: count ? featureSums.weekly_avg_sales / count : 0,
+        special_event: count ? featureSums.special_event / count : 0,
+        promotion_active: count ? featureSums.promotion_active / count : 0
+      };
+
+      // Use correct units for each factor
+      const factorsData: Factor[] = [
+        {
+          factor: 'Unit Price',
+          impact: avgFeatures.unit_price,
+          trend: 'neutral'
+        },
+        {
+          factor: 'Yesterday Sales',
+          impact: avgFeatures.yesterday_sales,
+          trend: avgFeatures.yesterday_sales > avgFeatures.weekly_avg_sales ? 'positive' : 'neutral'
+        },
+        {
+          factor: 'Weekly Avg Sales',
+          impact: avgFeatures.weekly_avg_sales,
+          trend: 'neutral'
+        },
+        {
+          factor: 'Special Event',
+          impact: avgFeatures.special_event,
+          trend: avgFeatures.special_event ? 'positive' : 'neutral'
+        },
+        {
+          factor: 'Promotion Active',
+          impact: avgFeatures.promotion_active,
+          trend: avgFeatures.promotion_active ? 'positive' : 'neutral'
+        }
+      ];
+      setFactorsData(factorsData);
+
+      setLoading(false);
+
+      // Only increment predictionsToday if this is a user-triggered change
+      if (
+        prevSelections &&
+        (
+          prevSelections.product !== selectedProduct ||
+          prevSelections.store !== selectedStore ||
+          prevSelections.range !== forecastRange
+        )
+      ) {
+        setPredictionsToday(prev => prev + forecastRange);
       }
+      setPrevSelections({
+        product: selectedProduct,
+        store: selectedStore,
+        range: forecastRange
+      });
+
+      // Set dynamic accuracy for UI
+      setDynamicAccuracy(dynamicAccuracy);
+    } catch (err) {
+      setError('Failed to load forecast data');
+      setLoading(false);
     }
-    loadForecastAndFactors();
   }, [selectedProduct, selectedStore, forecastRange]);
+
+  // Add state for dynamic accuracy
+  const [dynamicAccuracy, setDynamicAccuracy] = useState<number>(0);
 
   const exportCSV = () => {
     const headers = ['Date', 'Actual', 'Predicted', 'Confidence'];
@@ -181,7 +296,7 @@ const AIForecasting: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold">
-                {products.find(p => p.value === selectedProduct)?.accuracy ?? 'N/A'}%
+                {dynamicAccuracy}%
               </p>
               <p className="text-sm text-gray-300">Model Accuracy</p>
             </div>
@@ -193,7 +308,7 @@ const AIForecasting: React.FC = () => {
               <Target className="w-5 h-5 text-green-700" />
             </div>
             <div>
-              <p className="text-2xl font-bold">247</p>
+              <p className="text-2xl font-bold">{predictionsToday}</p>
               <p className="text-sm text-gray-300">Predictions Today</p>
             </div>
           </div>
@@ -294,7 +409,15 @@ const AIForecasting: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">{factor.factor}</span>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium">{factor.impact}%</span>
+                    <span className="text-sm font-medium">
+                      {factor.factor === 'Unit Price'
+                        ? `$${factor.impact.toFixed(2)}`
+                        : factor.factor === 'Yesterday Sales' || factor.factor === 'Weekly Avg Sales'
+                        ? `${factor.impact.toFixed(1)} units`
+                        : factor.factor === 'Special Event' || factor.factor === 'Promotion Active'
+                        ? factor.impact > 0 ? 'Yes' : 'No'
+                        : factor.impact}
+                    </span>
                     <div
                       className={`w-2 h-2 rounded-full ${
                         factor.trend === 'positive'
@@ -306,12 +429,22 @@ const AIForecasting: React.FC = () => {
                     ></div>
                   </div>
                 </div>
-                <div className="w-full bg-gray-100/80 rounded-full h-2">
-                  <div
-                    className="h-2 bg-gradient-to-r from-blue-300 to-blue-600 rounded-full transition-all duration-300"
-                    style={{ width: `${factor.impact}%` }}
-                  ></div>
-                </div>
+                {/* Only show bar for numeric factors */}
+                {(factor.factor === 'Unit Price' ||
+                  factor.factor === 'Yesterday Sales' ||
+                  factor.factor === 'Weekly Avg Sales') && (
+                  <div className="w-full bg-gray-100/80 rounded-full h-2">
+                    <div
+                      className="h-2 bg-gradient-to-r from-blue-300 to-blue-600 rounded-full transition-all duration-300"
+                      style={{
+                        width:
+                          factor.factor === 'Unit Price'
+                            ? `${Math.min(100, factor.impact / 15)}%`
+                            : `${Math.min(100, factor.impact * 5)}%`
+                      }}
+                    ></div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
