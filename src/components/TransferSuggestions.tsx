@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowRight, Clock, DollarSign, MapPin, CheckCircle, XCircle, AlertCircle, Download } from 'lucide-react';
+import { ArrowRight, Clock, DollarSign, MapPin, CheckCircle, XCircle, AlertCircle, Download, Edit3, Save, X } from 'lucide-react';
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import { transferSuggestions, stores } from '../data/mockData';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -40,6 +40,19 @@ const TransferSuggestions: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [approvedTransfers, setApprovedTransfers] = useState<string[]>([]);
   const [rejectedTransfers, setRejectedTransfers] = useState<string[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{
+    fromStoreId: string;
+    toStoreId: string;
+    quantity: number;
+    reason: string;
+  }>({
+    fromStoreId: '',
+    toStoreId: '',
+    quantity: 0,
+    reason: ''
+  });
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const { addNotification } = useNotifications();
 
   const getStoreName = (storeId: string) => stores.find(store => store.id === storeId)?.name || 'Unknown Store';
@@ -57,11 +70,20 @@ const TransferSuggestions: React.FC = () => {
   const getUrgencyIcon = (urgency: string) => urgency === 'critical' ? <AlertCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />;
 
   const handleApprove = (id: string) => {
+    // Check if this suggestion is currently being edited
+    if (editingId === id) {
+      addNotification({
+        type: 'reject',
+        message: 'Please save or cancel your edits before approving this suggestion.'
+      });
+      return;
+    }
+
     setApprovedTransfers([...approvedTransfers, id]);
     setRejectedTransfers(rejectedTransfers.filter(r => r !== id));
     
     // Find the suggestion to get store names
-    const suggestion = allSuggestions.find(s => s.id === id);
+    const suggestion = suggestions.find(s => s.id === id);
     if (suggestion) {
       const fromStore = getStoreName(suggestion.fromStoreId);
       const toStore = getStoreName(suggestion.toStoreId);
@@ -73,11 +95,20 @@ const TransferSuggestions: React.FC = () => {
   };
 
   const handleReject = (id: string) => {
+    // Check if this suggestion is currently being edited
+    if (editingId === id) {
+      addNotification({
+        type: 'reject',
+        message: 'Please save or cancel your edits before rejecting this suggestion.'
+      });
+      return;
+    }
+
     setRejectedTransfers([...rejectedTransfers, id]);
     setApprovedTransfers(approvedTransfers.filter(a => a !== id));
     
     // Find the suggestion to get store names
-    const suggestion = allSuggestions.find(s => s.id === id);
+    const suggestion = suggestions.find(s => s.id === id);
     if (suggestion) {
       const fromStore = getStoreName(suggestion.fromStoreId);
       const toStore = getStoreName(suggestion.toStoreId);
@@ -86,6 +117,105 @@ const TransferSuggestions: React.FC = () => {
         message: `Distribution from ${fromStore} to ${toStore} has been rejected.`
       });
     }
+  };
+
+  const handleEdit = (suggestion: any) => {
+    setEditingId(suggestion.id);
+    setEditForm({
+      fromStoreId: suggestion.fromStoreId,
+      toStoreId: suggestion.toStoreId,
+      quantity: suggestion.quantity,
+      reason: suggestion.reason
+    });
+  };
+
+  const handleSaveEdit = (suggestion: any) => {
+    // Validate source and destination stores
+    if (editForm.fromStoreId === editForm.toStoreId) {
+      addNotification({
+        type: 'reject',
+        message: 'Source and destination stores cannot be the same'
+      });
+      return;
+    }
+    
+    // Validate quantity
+    if (editForm.quantity <= 0) {
+      addNotification({
+        type: 'reject',
+        message: 'Quantity must be greater than 0'
+      });
+      return;
+    }
+    
+    if (editForm.quantity > suggestion.surplus) {
+      addNotification({
+        type: 'reject',
+        message: `Quantity cannot exceed available surplus (${suggestion.surplus} units)`
+      });
+      return;
+    }
+
+    // Update the suggestion with new values
+    const updatedSuggestion = {
+      ...suggestion,
+      fromStoreId: editForm.fromStoreId,
+      toStoreId: editForm.toStoreId,
+      quantity: editForm.quantity,
+      reason: editForm.reason,
+      // Recalculate distance and costs based on new source and destination
+      distance: calculateDistance(editForm.fromStoreId, editForm.toStoreId),
+      fuelCost: calculateFuelCost(editForm.toStoreId),
+      co2Impact: calculateDistance(editForm.fromStoreId, editForm.toStoreId) * CO2_PER_KM,
+      estimatedSavings: Math.min(suggestion.surplus, editForm.quantity) * 2,
+      // Recalculate derived values
+      costEffectivenessScore: calculateCostEffectiveness(
+        Math.min(suggestion.surplus, editForm.quantity) * 2,
+        calculateFuelCost(editForm.toStoreId),
+        calculateDistance(editForm.fromStoreId, editForm.toStoreId) * CO2_PER_KM
+      ),
+      urgency: suggestion.shortage > 150 ? 'critical' : suggestion.shortage > 100 ? 'high' : suggestion.shortage > 50 ? 'medium' : 'low'
+    };
+
+    console.log('Saving edit for suggestion:', suggestion.id);
+    console.log('Updated values:', {
+      fromStoreId: editForm.fromStoreId,
+      toStoreId: editForm.toStoreId,
+      quantity: editForm.quantity,
+      reason: editForm.reason
+    });
+
+    // Update the suggestions array (in a real app, this would be an API call)
+    setSuggestions(prevSuggestions => {
+      const newSuggestions = prevSuggestions.map(s => s.id === suggestion.id ? updatedSuggestion : s);
+      console.log('Suggestions updated, new count:', newSuggestions.length);
+      return [...newSuggestions]; // Force new array reference
+    });
+
+    setEditingId(null);
+    setEditForm({ fromStoreId: '', toStoreId: '', quantity: 0, reason: '' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditForm({ fromStoreId: '', toStoreId: '', quantity: 0, reason: '' });
+  };
+
+  const calculateDistance = (fromStoreId: string, toStoreId: string) => {
+    const fromStore = stores.find(s => s.id === fromStoreId);
+    const toStore = stores.find(s => s.id === toStoreId);
+    
+    if (!fromStore || !toStore) return 0;
+    
+    // Simple distance calculation (in a real app, you'd use a proper distance API)
+    const latDiff = Math.abs(fromStore.lat - toStore.lat);
+    const lngDiff = Math.abs(fromStore.lng - toStore.lng);
+    return Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 69; // Rough conversion to miles
+  };
+
+  const calculateFuelCost = (storeId: string) => {
+    const store = stores.find(s => s.id === storeId);
+    return store ? store.cpiIndex * 0.03 : 0.03; // Base fuel cost calculation
   };
 
   const handleSearch = () => {
@@ -111,7 +241,7 @@ const TransferSuggestions: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const enrichedSuggestions = transferSuggestions
+  const enrichedSuggestions = useMemo(() => transferSuggestions
   .map(s => {
     const estimatedSavings = s.estimatedSavings ?? Math.min(s.surplus, s.shortage) * 2;
     const quantity = Math.min(s.surplus, s.shortage);
@@ -128,7 +258,7 @@ const TransferSuggestions: React.FC = () => {
       co2Impact,
     };
   })
-  .filter(s => isValidTransfer(s));
+  .filter(s => isValidTransfer(s)), [transferSuggestions]);
 
   const additionalSuggestions = useMemo(() => 
     additionalProducts.map((product, index) => {
@@ -161,25 +291,30 @@ const TransferSuggestions: React.FC = () => {
     }).filter(s => isValidTransfer(s)), []
   );
 
-  const allSuggestions = [
+  const allSuggestions = useMemo(() => [
     ...enrichedSuggestions,
     ...additionalSuggestions
-  ];
+  ], [enrichedSuggestions, additionalSuggestions]);
 
-  const filteredSuggestions = allSuggestions.filter(s => {
+  // Initialize suggestions state
+  React.useEffect(() => {
+    setSuggestions(allSuggestions);
+  }, [allSuggestions]);
+
+  const filteredSuggestions = useMemo(() => suggestions.filter(s => {
     const matchesFilter = filter === 'all' || s.urgency === filter;
     const matchesSearch = s.productName.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch && s.costEffectivenessScore > 0;
-  });
+  }), [suggestions, filter, search]);
 
-  const urgencyStats = allSuggestions.reduce((acc, s) => {
+  const urgencyStats = useMemo(() => suggestions.reduce((acc, s) => {
     acc[s.urgency] = (acc[s.urgency] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>), [suggestions]);
 
-  const totalSavings = filteredSuggestions.reduce((sum, s) => sum + s.estimatedSavings, 0);
-  const averageDistance = filteredSuggestions.reduce((sum, s) => sum + s.distance, 0) / (filteredSuggestions.length || 1);
-  const pendingSuggestions = filteredSuggestions.filter(s => !approvedTransfers.includes(s.id) && !rejectedTransfers.includes(s.id));
+  const totalSavings = useMemo(() => filteredSuggestions.reduce((sum, s) => sum + s.estimatedSavings, 0), [filteredSuggestions]);
+  const averageDistance = useMemo(() => filteredSuggestions.reduce((sum, s) => sum + s.distance, 0) / (filteredSuggestions.length || 1), [filteredSuggestions]);
+  const pendingSuggestions = useMemo(() => filteredSuggestions.filter(s => !approvedTransfers.includes(s.id) && !rejectedTransfers.includes(s.id)), [filteredSuggestions, approvedTransfers, rejectedTransfers]);
 
   return (
     <div className="space-y-6 font-inter">
@@ -281,6 +416,7 @@ const TransferSuggestions: React.FC = () => {
           const isApproved = approvedTransfers.includes(suggestion.id);
           const isRejected = rejectedTransfers.includes(suggestion.id);
           const isPending = !isApproved && !isRejected;
+          const isEditing = editingId === suggestion.id;
 
           return (
             <div
@@ -301,13 +437,18 @@ const TransferSuggestions: React.FC = () => {
                     <span className="text-sm text-gray-300">
                       Confidence: {(suggestion.confidence * 100).toFixed(0)}%
                     </span>
-                    {(isApproved || isRejected) && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        isApproved ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-                      }`}>
-                        {isApproved ? 'Approved' : 'Rejected'}
-                      </span>
-                    )}
+                                         {(isApproved || isRejected) && (
+                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                         isApproved ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                       }`}>
+                         {isApproved ? 'Approved' : 'Rejected'}
+                       </span>
+                     )}
+                     {isEditing && (
+                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
+                         Editing
+                       </span>
+                     )}
                   </div>
 
                   <div className="flex items-center space-x-4">
@@ -324,67 +465,216 @@ const TransferSuggestions: React.FC = () => {
 
                   <div className="bg-gray-100/80 rounded-lg p-3">
                     <h4 className="font-medium text-black mb-1">{suggestion.productName}</h4>
-                    <p className="text-sm text-gray-500 mb-2">{suggestion.reason}</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-700">Quantity:</span>
-                        <span className="text-black font-semibold ml-1">{suggestion.quantity} units</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-700">Distance:</span>
-                        <span className="text-black font-semibold ml-1">{suggestion.distance} mi</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-700">Savings:</span>
-                        <span className="text-green-700 font-semibold ml-1">${suggestion.estimatedSavings.toLocaleString()}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-700">SKU:</span>
-                        <span className="text-black font-semibold ml-1">{suggestion.sku}</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-2">
-  <div>
-    <span className="text-gray-700">Fuel Cost:</span>
-    <span className="text-black font-semibold ml-1">${suggestion.fuelCost.toFixed(2)}</span>
-  </div>
-  <div>
-    <span className="text-gray-700">CO₂ Impact:</span>
-    <span className="text-black font-semibold ml-1">{suggestion.co2Impact.toFixed(2)} kg</span>
-  </div>
-  <div>
-    <span className="text-gray-700">CPI Index:</span>
-    <span className="text-black font-semibold ml-1">{suggestion.cpiIndex}</span>
-  </div>
-  <div>
-    <span className="text-gray-700">Effectiveness:</span>
-    <span className={`font-semibold ml-1 ${suggestion.costEffectivenessScore > 0 ? 'text-green-700' : 'text-red-700'}`}>
-      ${suggestion.costEffectivenessScore.toFixed(2)}
-    </span>
-  </div>
-</div>
-
+                    
+                                         {isEditing ? (
+                       <div className="space-y-3">
+                         <div>
+                           <label className="block text-sm font-medium text-gray-800 mb-1">Source Store</label>
+                           <select
+                             value={editForm.fromStoreId}
+                             onChange={(e) => setEditForm({...editForm, fromStoreId: e.target.value})}
+                             className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-white text-gray-900 ${
+                               editForm.fromStoreId === editForm.toStoreId && editForm.fromStoreId !== '' 
+                                 ? 'border-red-500' 
+                                 : 'border-gray-300'
+                             }`}
+                           >
+                             <option value="">Select source store</option>
+                             {stores.map(store => (
+                               <option key={store.id} value={store.id} disabled={store.id === editForm.toStoreId}>
+                                 {store.name} {store.id === editForm.toStoreId ? '(Same as destination)' : ''}
+                               </option>
+                             ))}
+                           </select>
+                           {editForm.fromStoreId === editForm.toStoreId && editForm.fromStoreId !== '' && (
+                             <p className="text-xs text-red-600 mt-1">Source and destination cannot be the same</p>
+                           )}
+                         </div>
+                         
+                         <div>
+                           <label className="block text-sm font-medium text-gray-800 mb-1">Destination Store</label>
+                           <select
+                             value={editForm.toStoreId}
+                             onChange={(e) => setEditForm({...editForm, toStoreId: e.target.value})}
+                             className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-white text-gray-900 ${
+                               editForm.fromStoreId === editForm.toStoreId && editForm.toStoreId !== '' 
+                                 ? 'border-red-500' 
+                                 : 'border-gray-300'
+                             }`}
+                           >
+                             <option value="">Select destination store</option>
+                             {stores.map(store => (
+                               <option key={store.id} value={store.id} disabled={store.id === editForm.fromStoreId}>
+                                 {store.name} {store.id === editForm.fromStoreId ? '(Same as source)' : ''}
+                               </option>
+                             ))}
+                           </select>
+                           {editForm.fromStoreId === editForm.toStoreId && editForm.toStoreId !== '' && (
+                             <p className="text-xs text-red-600 mt-1">Source and destination cannot be the same</p>
+                           )}
+                         </div>
+                         
+                         <div>
+                           <label className="block text-sm font-medium text-gray-800 mb-1">Quantity</label>
+                           <input
+                             type="number"
+                             value={editForm.quantity}
+                             onChange={(e) => setEditForm({...editForm, quantity: parseInt(e.target.value) || 0})}
+                             min="1"
+                             max={suggestion.surplus}
+                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-white text-gray-900"
+                           />
+                           <p className="text-xs text-gray-600 mt-1">Max available: {suggestion.surplus} units</p>
+                         </div>
+                         
+                         <div>
+                           <label className="block text-sm font-medium text-gray-800 mb-1">Reason</label>
+                           <textarea
+                             value={editForm.reason}
+                             onChange={(e) => setEditForm({...editForm, reason: e.target.value})}
+                             rows={2}
+                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-white text-gray-900"
+                             placeholder="Enter reason for transfer..."
+                           />
+                         </div>
+                         
+                         {/* Real-time preview of updated metrics */}
+                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                           <h5 className="text-sm font-medium text-blue-800 mb-2">Updated Metrics Preview:</h5>
+                           <div className="grid grid-cols-2 gap-2 text-xs">
+                             <div>
+                               <span className="text-blue-700">New Distance:</span>
+                               <span className="text-blue-900 font-semibold ml-1">
+                                 {calculateDistance(editForm.fromStoreId, editForm.toStoreId).toFixed(1)} mi
+                               </span>
+                             </div>
+                             <div>
+                               <span className="text-blue-700">New Savings:</span>
+                               <span className="text-green-700 font-semibold ml-1">
+                                 ${Math.min(suggestion.surplus, editForm.quantity) * 2}
+                               </span>
+                             </div>
+                             <div>
+                               <span className="text-blue-700">Fuel Cost:</span>
+                               <span className="text-blue-900 font-semibold ml-1">
+                                 ${calculateFuelCost(editForm.toStoreId).toFixed(2)}
+                               </span>
+                             </div>
+                             <div>
+                               <span className="text-blue-700">CO₂ Impact:</span>
+                               <span className="text-blue-900 font-semibold ml-1">
+                                 {(calculateDistance(editForm.fromStoreId, editForm.toStoreId) * CO2_PER_KM).toFixed(2)} kg
+                               </span>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-500 mb-2">{suggestion.reason}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-700">Quantity:</span>
+                            <span className="text-black font-semibold ml-1">{suggestion.quantity} units</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-700">Distance:</span>
+                            <span className="text-black font-semibold ml-1">{suggestion.distance} mi</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-700">Savings:</span>
+                            <span className="text-green-700 font-semibold ml-1">${suggestion.estimatedSavings.toLocaleString()}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-700">SKU:</span>
+                            <span className="text-black font-semibold ml-1">{suggestion.sku}</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-2">
+                          <div>
+                            <span className="text-gray-700">Fuel Cost:</span>
+                            <span className="text-black font-semibold ml-1">${suggestion.fuelCost.toFixed(2)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-700">CO₂ Impact:</span>
+                            <span className="text-black font-semibold ml-1">{suggestion.co2Impact.toFixed(2)} kg</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-700">CPI Index:</span>
+                            <span className="text-black font-semibold ml-1">{suggestion.cpiIndex}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-700">Effectiveness:</span>
+                            <span className={`font-semibold ml-1 ${suggestion.costEffectivenessScore > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                              ${suggestion.costEffectivenessScore.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {isPending && (
-                  <div className="flex items-bottom space-x-3">
-                    <button
-                      onClick={() => handleApprove(suggestion.id)}
-                      className="flex items-center space-x-2 bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-full transition-colors"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Approve</span>
-                    </button>
-                    <button
-                      onClick={() => handleReject(suggestion.id)}
-                      className="flex items-center space-x-2 bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-full transition-colors"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      <span>Reject</span>
-                    </button>
-                  </div>
-                )}
+                <div className="flex items-bottom space-x-3">
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={() => handleSaveEdit(suggestion)}
+                        className="flex items-center space-x-2 bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-full transition-colors"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Save</span>
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-full transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>Cancel</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {isPending && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(suggestion)}
+                            className="flex items-center space-x-2 bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-full transition-colors"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleApprove(suggestion.id)}
+                            disabled={isEditing}
+                            className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-colors ${
+                              isEditing 
+                                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                                : 'bg-green-700 hover:bg-green-600 text-white'
+                            }`}
+                            title={isEditing ? 'Save or cancel edits first' : 'Approve this suggestion'}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            onClick={() => handleReject(suggestion.id)}
+                            disabled={isEditing}
+                            className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-colors ${
+                              isEditing 
+                                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                                : 'bg-red-700 hover:bg-red-600 text-white'
+                            }`}
+                            title={isEditing ? 'Save or cancel edits first' : 'Reject this suggestion'}
+                          >
+                            <XCircle className="w-4 h-4" />
+                            <span>Reject</span>
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           );
