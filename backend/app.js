@@ -7,6 +7,7 @@ const localStrategy = passportLocal.Strategy;
 import ExpressError from './utils/ExpressError.js';
 import User from "./models/user.model.js";
 import userRoutes from './routes/user.routes.js';
+import emailRoutes from './routes/email.routes.js';
 // import storesRoutes from './routes/stores.js';
 // import inventoryRoutes from './routes/inventory.js';
 import dotenv from 'dotenv';
@@ -63,6 +64,7 @@ app.get('/', (req, res) => {
 // app.use('/api/stores', storesRoutes);
 // app.use('/api/inventory', inventoryRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/email', emailRoutes);
 
 // app.all('*', (req, res, next) => {
 //     next(new ExpressError(404, "Page not Found"));

@@ -3,6 +3,8 @@ import { ArrowRight, Clock, DollarSign, MapPin, CheckCircle, XCircle, AlertCircl
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import { transferSuggestions, stores } from '../data/mockData';
 import { useNotifications } from '../contexts/NotificationContext';
+import { sendApprovalEmail, sendRejectionEmail, sendEditEmail, SuggestionData } from '../data/emailApi';
+import { useAuth } from '../contexts/AuthContext';
 
 const additionalProducts = [
   'Sony Noise Cancelling Headphones',
@@ -54,6 +56,7 @@ const TransferSuggestions: React.FC = () => {
   });
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const { addNotification } = useNotifications();
+  const { user } = useAuth();
 
   const getStoreName = (storeId: string) => stores.find(store => store.id === storeId)?.name || 'Unknown Store';
 
@@ -69,7 +72,7 @@ const TransferSuggestions: React.FC = () => {
 
   const getUrgencyIcon = (urgency: string) => urgency === 'critical' ? <AlertCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />;
 
-  const handleApprove = (id: string) => {
+  const handleApprove = async (id: string) => {
     // Check if this suggestion is currently being edited
     if (editingId === id) {
       addNotification({
@@ -87,14 +90,35 @@ const TransferSuggestions: React.FC = () => {
     if (suggestion) {
       const fromStore = getStoreName(suggestion.fromStoreId);
       const toStore = getStoreName(suggestion.toStoreId);
+      
+      // Add notification
       addNotification({
         type: 'approve',
         message: `Distribution from ${fromStore} to ${toStore} has been approved.`
       });
+
+      // Send email notification (silent - no notification bell message)
+      try {
+        const suggestionData: SuggestionData = {
+          id: suggestion.id,
+          fromStoreId: suggestion.fromStoreId,
+          toStoreId: suggestion.toStoreId,
+          productName: suggestion.productName,
+          quantity: suggestion.quantity,
+          reason: suggestion.reason,
+          estimatedSavings: suggestion.estimatedSavings,
+          fromStore,
+          toStore
+        };
+
+        await sendApprovalEmail(suggestionData, user?.username || 'Unknown User');
+      } catch (error) {
+        console.error('Error sending approval email:', error);
+      }
     }
   };
 
-  const handleReject = (id: string) => {
+  const handleReject = async (id: string) => {
     // Check if this suggestion is currently being edited
     if (editingId === id) {
       addNotification({
@@ -112,10 +136,31 @@ const TransferSuggestions: React.FC = () => {
     if (suggestion) {
       const fromStore = getStoreName(suggestion.fromStoreId);
       const toStore = getStoreName(suggestion.toStoreId);
+      
+      // Add notification
       addNotification({
         type: 'reject',
         message: `Distribution from ${fromStore} to ${toStore} has been rejected.`
       });
+
+      // Send email notification (silent - no notification bell message)
+      try {
+        const suggestionData: SuggestionData = {
+          id: suggestion.id,
+          fromStoreId: suggestion.fromStoreId,
+          toStoreId: suggestion.toStoreId,
+          productName: suggestion.productName,
+          quantity: suggestion.quantity,
+          reason: suggestion.reason,
+          estimatedSavings: suggestion.estimatedSavings,
+          fromStore,
+          toStore
+        };
+
+        await sendRejectionEmail(suggestionData, user?.username || 'Unknown User');
+      } catch (error) {
+        console.error('Error sending rejection email:', error);
+      }
     }
   };
 
@@ -129,7 +174,7 @@ const TransferSuggestions: React.FC = () => {
     });
   };
 
-  const handleSaveEdit = (suggestion: any) => {
+  const handleSaveEdit = async (suggestion: any) => {
     // Validate source and destination stores
     if (editForm.fromStoreId === editForm.toStoreId) {
       addNotification({
@@ -191,6 +236,33 @@ const TransferSuggestions: React.FC = () => {
       console.log('Suggestions updated, new count:', newSuggestions.length);
       return [...newSuggestions]; // Force new array reference
     });
+
+    // Add notification for successful edit
+    const fromStore = getStoreName(editForm.fromStoreId);
+    const toStore = getStoreName(editForm.toStoreId);
+    addNotification({
+      type: 'info',
+      message: `Transfer details updated: ${fromStore} to ${toStore}`
+    });
+
+    // Send email notification (silent - no notification bell message)
+    try {
+      const suggestionData: SuggestionData = {
+        id: suggestion.id,
+        fromStoreId: editForm.fromStoreId,
+        toStoreId: editForm.toStoreId,
+        productName: suggestion.productName,
+        quantity: editForm.quantity,
+        reason: editForm.reason,
+        estimatedSavings: Math.min(suggestion.surplus, editForm.quantity) * 2,
+        fromStore,
+        toStore
+      };
+
+      await sendEditEmail(suggestionData, user?.username || 'Unknown User');
+    } catch (error) {
+      console.error('Error sending edit email:', error);
+    }
 
     setEditingId(null);
     setEditForm({ fromStoreId: '', toStoreId: '', quantity: 0, reason: '' });
