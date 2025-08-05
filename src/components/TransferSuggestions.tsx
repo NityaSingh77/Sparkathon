@@ -499,7 +499,7 @@ const TransferSuggestions: React.FC = () => {
               <p className="text-2xl font-bold text-white">{approvedTransfers.length}</p>
               <p className="text-sm text-gray-300">Approved</p>
             </div>
-          </div>
+          </div> 
         </div>
 
         <div className="bg-[#043980] rounded-xl p-6">
@@ -767,11 +767,12 @@ const TransferSuggestions: React.FC = () => {
                         <>
                           <button
                             onClick={() => handleEdit(suggestion)}
-                            className="flex items-center space-x-2 bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-full transition-colors"
+                            className="flex items-center justify-center text-white-800 hover:bg-black-200 p-2 rounded-full transition-colors"
                           >
                             <Edit3 className="w-4 h-4" />
-                            <span>Edit</span>
                           </button>
+                        
+
                           <button
                             onClick={() => handleApprove(suggestion.id)}
                             disabled={isEditing}
