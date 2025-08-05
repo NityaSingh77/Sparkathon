@@ -24,6 +24,7 @@ const calculateCostEffectiveness = (savings: number, fuelCost: number, co2Impact
 };
 
 
+
 const isValidTransfer = (suggestion: any) => {
   const surplusValid = suggestion.surplus > SURPLUS_THRESHOLD;
   const shortageValid = suggestion.shortage > SHORTAGE_THRESHOLD;
@@ -43,6 +44,11 @@ const TransferSuggestions: React.FC = () => {
   const [approvedTransfers, setApprovedTransfers] = useState<string[]>([]);
   const [rejectedTransfers, setRejectedTransfers] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [transferStatus, setTransferStatus] = useState<Record<string, {
+  status: 'Pending' | 'In Transit' | 'Delivered';
+  shippingCost: number;
+  deliveryTime: string;
+}>>({});
   const [editForm, setEditForm] = useState<{
     fromStoreId: string;
     toStoreId: string;
@@ -73,53 +79,62 @@ const TransferSuggestions: React.FC = () => {
   const getUrgencyIcon = (urgency: string) => urgency === 'critical' ? <AlertCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />;
 
   const handleApprove = async (id: string) => {
-    // Check if this suggestion is currently being edited
-    if (editingId === id) {
-      addNotification({
-        type: 'reject',
-        message: 'Please save or cancel your edits before approving this suggestion.'
-      });
-      return;
+  if (editingId === id) {
+    addNotification({
+      type: 'reject',
+      message: 'Please save or cancel your edits before approving this suggestion.'
+    });
+    return;
+  }
+
+  setApprovedTransfers([...approvedTransfers, id]);
+  setRejectedTransfers(rejectedTransfers.filter(r => r !== id));
+
+  // Initialize transfer tracking
+  setTransferStatus(prev => ({
+    ...prev,
+    [id]: {
+      status: 'Pending',
+      shippingCost: parseFloat((Math.random() * 100 + 20).toFixed(2)),
+      deliveryTime: `${Math.floor(Math.random() * 3) + 1} days`
     }
+  }));
 
-    setApprovedTransfers([...approvedTransfers, id]);
-    setRejectedTransfers(rejectedTransfers.filter(r => r !== id));
-    
-    // Find the suggestion to get store names
-    const suggestion = suggestions.find(s => s.id === id);
-    if (suggestion) {
-      const fromStore = getStoreName(suggestion.fromStoreId);
-      const toStore = getStoreName(suggestion.toStoreId);
-      
-      // Add notification
-      addNotification({
-        type: 'approve',
-        message: `Distribution from ${fromStore} to ${toStore} has been approved.`
-      });
+  // Get store details for notifications/emails
+  const suggestion = suggestions.find(s => s.id === id);
+  if (suggestion) {
+    const fromStore = getStoreName(suggestion.fromStoreId);
+    const toStore = getStoreName(suggestion.toStoreId);
 
-      // Send email notification (silent - no notification bell message)
-      try {
-        const suggestionData: SuggestionData = {
-          id: suggestion.id,
-          fromStoreId: suggestion.fromStoreId,
-          toStoreId: suggestion.toStoreId,
-          productName: suggestion.productName,
-          quantity: suggestion.quantity,
-          reason: suggestion.reason,
-          estimatedSavings: suggestion.estimatedSavings,
-          fromStore,
-          toStore
-        };
+    addNotification({
+      type: 'approve',
+      message: `Distribution from ${fromStore} to ${toStore} has been approved.`
+    });
 
-        await sendApprovalEmail(suggestionData, user?.username || 'Unknown User');
-      } catch (error) {
-        console.error('Error sending approval email:', error);
-      }
+    try {
+      const suggestionData: SuggestionData = {
+        id: suggestion.id,
+        fromStoreId: suggestion.fromStoreId,
+        toStoreId: suggestion.toStoreId,
+        productName: suggestion.productName,
+        quantity: suggestion.quantity,
+        reason: suggestion.reason,
+        estimatedSavings: suggestion.estimatedSavings,
+        fromStore,
+        toStore
+      };
+      await sendApprovalEmail(suggestionData, user?.username || 'Unknown User');
+    } catch (error) {
+      console.error('Error sending approval email:', error);
     }
-  };
+  }
+};
 
+  
   const handleReject = async (id: string) => {
     // Check if this suggestion is currently being edited
+    setRejectedTransfers([...rejectedTransfers, id]);
+    setApprovedTransfers(approvedTransfers.filter(a => a !== id));
     if (editingId === id) {
       addNotification({
         type: 'reject',
@@ -299,6 +314,23 @@ const TransferSuggestions: React.FC = () => {
       handleSearch();
     }
   };
+
+  const updateTransferStatus = (id: string) => {
+  setTransferStatus(prev => {
+    const current = prev[id];
+    if (!current) return prev;
+
+    const nextStatus =
+      current.status === 'Pending'
+        ? 'In Transit'
+        : current.status === 'In Transit'
+        ? 'Delivered'
+        : 'Delivered';
+
+    return { ...prev, [id]: { ...current, status: nextStatus } };
+  });
+};
+
 
   const exportCSV = () => {
     const headers = ['ID', 'From', 'To', 'Product', 'Quantity', 'Distance', 'Savings', 'Urgency'];
@@ -521,8 +553,32 @@ const TransferSuggestions: React.FC = () => {
                          Editing
                        </span>
                      )}
+                     {isApproved && transferStatus[suggestion.id] && (
+  <div className="flex flex-col space-y-2 mt-2">
+    <div className="flex items-center space-x-2">
+      <span className="text-xs text-gray-200">Status:</span>
+      <div className="flex space-x-2">
+        {['Pending', 'In Transit', 'Delivered'].map(stage => (
+          <span
+            key={stage}
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              transferStatus[suggestion.id].status === stage
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-400 text-gray-800'
+            }`}
+          >
+            {stage}
+          </span>
+        ))}
+      </div>
+    </div>
+    <div className="text-xs text-gray-200">
+      Shipping: ${transferStatus[suggestion.id].shippingCost} | ETA: {transferStatus[suggestion.id].deliveryTime}
+    </div>
+  </div>
+)}
                   </div>
-
+              
                   <div className="flex items-center space-x-4">
                     <div className="text-center">
                       <p className="text-sm font-medium text-white">{getStoreName(suggestion.fromStoreId)}</p>
@@ -742,9 +798,15 @@ const TransferSuggestions: React.FC = () => {
                             <XCircle className="w-4 h-4" />
                             <span>Reject</span>
                           </button>
+                          {isRejected && (
+        <p className="text-xs text-red-300 mt-1">
+          Why was this transfer rejected?
+        </p>
+      )}
                         </>
                       )}
                     </>
+                    
                   )}
                 </div>
               </div>
