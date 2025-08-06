@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { ArrowRight, Clock, DollarSign, MapPin, CheckCircle, XCircle, AlertCircle, Download, Edit3, Save, X } from 'lucide-react';
 import { FaMagnifyingGlass } from "react-icons/fa6";
@@ -23,8 +24,6 @@ const calculateCostEffectiveness = (savings: number, fuelCost: number, co2Impact
   return savings - totalCost;
 };
 
-
-
 const isValidTransfer = (suggestion: any) => {
   const surplusValid = suggestion.surplus > SURPLUS_THRESHOLD;
   const shortageValid = suggestion.shortage > SHORTAGE_THRESHOLD;
@@ -34,8 +33,8 @@ const isValidTransfer = (suggestion: any) => {
   return surplusValid && shortageValid && valueOfAvoidedLoss > environmentalCost && cpiFavorable;
 };
 
-
-
+// Track ID generator
+const generateTrackId = (id: string) => `TRK-${id}-${Math.floor(Math.random() * 10000)}`;
 
 const TransferSuggestions: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
@@ -45,10 +44,10 @@ const TransferSuggestions: React.FC = () => {
   const [rejectedTransfers, setRejectedTransfers] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [transferStatus, setTransferStatus] = useState<Record<string, {
-  status: 'Pending' | 'In Transit' | 'Delivered';
-  shippingCost: number;
-  deliveryTime: string;
-}>>({});
+    status: 'Pending' | 'In Transit' | 'Delivered';
+    shippingCost: number;
+    deliveryTime: string;
+  }>>({});
   const [editForm, setEditForm] = useState<{
     fromStoreId: string;
     toStoreId: string;
@@ -79,60 +78,58 @@ const TransferSuggestions: React.FC = () => {
   const getUrgencyIcon = (urgency: string) => urgency === 'critical' ? <AlertCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />;
 
   const handleApprove = async (id: string) => {
-  if (editingId === id) {
-    addNotification({
-      type: 'reject',
-      message: 'Please save or cancel your edits before approving this suggestion.'
-    });
-    return;
-  }
-
-  setApprovedTransfers([...approvedTransfers, id]);
-  setRejectedTransfers(rejectedTransfers.filter(r => r !== id));
-
-  // Initialize transfer tracking
-  setTransferStatus(prev => ({
-    ...prev,
-    [id]: {
-      status: 'Pending',
-      shippingCost: parseFloat((Math.random() * 100 + 20).toFixed(2)),
-      deliveryTime: `${Math.floor(Math.random() * 3) + 1} days`
+    if (editingId === id) {
+      addNotification({
+        type: 'reject',
+        message: 'Please save or cancel your edits before approving this suggestion.'
+      });
+      return;
     }
-  }));
 
-  // Get store details for notifications/emails
-  const suggestion = suggestions.find(s => s.id === id);
-  if (suggestion) {
-    const fromStore = getStoreName(suggestion.fromStoreId);
-    const toStore = getStoreName(suggestion.toStoreId);
+    setApprovedTransfers([...approvedTransfers, id]);
+    setRejectedTransfers(rejectedTransfers.filter(r => r !== id));
 
-    addNotification({
-      type: 'approve',
-      message: `Distribution from ${fromStore} to ${toStore} has been approved.`
-    });
+    // Initialize transfer tracking
+    setTransferStatus(prev => ({
+      ...prev,
+      [id]: {
+        status: 'Pending',
+        shippingCost: parseFloat((Math.random() * 100 + 20).toFixed(2)),
+        deliveryTime: `${Math.floor(Math.random() * 3) + 1} days`
+      }
+    }));
 
-    try {
-      const suggestionData: SuggestionData = {
-        id: suggestion.id,
-        fromStoreId: suggestion.fromStoreId,
-        toStoreId: suggestion.toStoreId,
-        productName: suggestion.productName,
-        quantity: suggestion.quantity,
-        reason: suggestion.reason,
-        estimatedSavings: suggestion.estimatedSavings,
-        fromStore,
-        toStore
-      };
-      await sendApprovalEmail(suggestionData, user?.username || 'Unknown User');
-    } catch (error) {
-      console.error('Error sending approval email:', error);
+    // Get store details for notifications/emails
+    const suggestion = suggestions.find(s => s.id === id);
+    if (suggestion) {
+      const fromStore = getStoreName(suggestion.fromStoreId);
+      const toStore = getStoreName(suggestion.toStoreId);
+
+      addNotification({
+        type: 'approve',
+        message: `Distribution from ${fromStore} to ${toStore} has been approved.`
+      });
+
+      try {
+        const suggestionData: SuggestionData = {
+          id: suggestion.id,
+          fromStoreId: suggestion.fromStoreId,
+          toStoreId: suggestion.toStoreId,
+          productName: suggestion.productName,
+          quantity: suggestion.quantity,
+          reason: suggestion.reason,
+          estimatedSavings: suggestion.estimatedSavings,
+          fromStore,
+          toStore
+        };
+        await sendApprovalEmail(suggestionData, user?.username || 'Unknown User');
+      } catch (error) {
+        console.error('Error sending approval email:', error);
+      }
     }
-  }
-};
+  };
 
-  
   const handleReject = async (id: string) => {
-    // Check if this suggestion is currently being edited
     setRejectedTransfers([...rejectedTransfers, id]);
     setApprovedTransfers(approvedTransfers.filter(a => a !== id));
     if (editingId === id) {
@@ -146,19 +143,15 @@ const TransferSuggestions: React.FC = () => {
     setRejectedTransfers([...rejectedTransfers, id]);
     setApprovedTransfers(approvedTransfers.filter(a => a !== id));
     
-    // Find the suggestion to get store names
     const suggestion = suggestions.find(s => s.id === id);
     if (suggestion) {
       const fromStore = getStoreName(suggestion.fromStoreId);
       const toStore = getStoreName(suggestion.toStoreId);
-      
-      // Add notification
       addNotification({
         type: 'reject',
         message: `Distribution from ${fromStore} to ${toStore} has been rejected.`
       });
 
-      // Send email notification (silent - no notification bell message)
       try {
         const suggestionData: SuggestionData = {
           id: suggestion.id,
@@ -190,7 +183,6 @@ const TransferSuggestions: React.FC = () => {
   };
 
   const handleSaveEdit = async (suggestion: any) => {
-    // Validate source and destination stores
     if (editForm.fromStoreId === editForm.toStoreId) {
       addNotification({
         type: 'reject',
@@ -198,8 +190,6 @@ const TransferSuggestions: React.FC = () => {
       });
       return;
     }
-    
-    // Validate quantity
     if (editForm.quantity <= 0) {
       addNotification({
         type: 'reject',
@@ -207,7 +197,6 @@ const TransferSuggestions: React.FC = () => {
       });
       return;
     }
-    
     if (editForm.quantity > suggestion.surplus) {
       addNotification({
         type: 'reject',
@@ -216,43 +205,30 @@ const TransferSuggestions: React.FC = () => {
       return;
     }
 
-    // Update the suggestion with new values
     const updatedSuggestion = {
       ...suggestion,
       fromStoreId: editForm.fromStoreId,
       toStoreId: editForm.toStoreId,
       quantity: editForm.quantity,
       reason: editForm.reason,
-      // Recalculate distance and costs based on new source and destination
       distance: calculateDistance(editForm.fromStoreId, editForm.toStoreId),
       fuelCost: calculateFuelCost(editForm.toStoreId),
       co2Impact: calculateDistance(editForm.fromStoreId, editForm.toStoreId) * CO2_PER_KM,
       estimatedSavings: Math.min(suggestion.surplus, editForm.quantity) * 2,
-      // Recalculate derived values
       costEffectivenessScore: calculateCostEffectiveness(
         Math.min(suggestion.surplus, editForm.quantity) * 2,
         calculateFuelCost(editForm.toStoreId),
         calculateDistance(editForm.fromStoreId, editForm.toStoreId) * CO2_PER_KM
       ),
-      urgency: suggestion.shortage > 150 ? 'critical' : suggestion.shortage > 100 ? 'high' : suggestion.shortage > 50 ? 'medium' : 'low'
+      urgency: suggestion.shortage > 150 ? 'critical' : suggestion.shortage > 100 ? 'high' : suggestion.shortage > 50 ? 'medium' : 'low',
+      trackId: suggestion.trackId // keep trackId unchanged
     };
 
-    console.log('Saving edit for suggestion:', suggestion.id);
-    console.log('Updated values:', {
-      fromStoreId: editForm.fromStoreId,
-      toStoreId: editForm.toStoreId,
-      quantity: editForm.quantity,
-      reason: editForm.reason
-    });
-
-    // Update the suggestions array (in a real app, this would be an API call)
     setSuggestions(prevSuggestions => {
       const newSuggestions = prevSuggestions.map(s => s.id === suggestion.id ? updatedSuggestion : s);
-      console.log('Suggestions updated, new count:', newSuggestions.length);
-      return [...newSuggestions]; // Force new array reference
+      return [...newSuggestions];
     });
 
-    // Add notification for successful edit
     const fromStore = getStoreName(editForm.fromStoreId);
     const toStore = getStoreName(editForm.toStoreId);
     addNotification({
@@ -260,7 +236,6 @@ const TransferSuggestions: React.FC = () => {
       message: `Transfer details updated: ${fromStore} to ${toStore}`
     });
 
-    // Send email notification (silent - no notification bell message)
     try {
       const suggestionData: SuggestionData = {
         id: suggestion.id,
@@ -291,18 +266,15 @@ const TransferSuggestions: React.FC = () => {
   const calculateDistance = (fromStoreId: string, toStoreId: string) => {
     const fromStore = stores.find(s => s.id === fromStoreId);
     const toStore = stores.find(s => s.id === toStoreId);
-    
     if (!fromStore || !toStore) return 0;
-    
-    // Simple distance calculation (in a real app, you'd use a proper distance API)
     const latDiff = Math.abs(fromStore.lat - toStore.lat);
     const lngDiff = Math.abs(fromStore.lng - toStore.lng);
-    return Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 69; // Rough conversion to miles
+    return Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 69;
   };
 
   const calculateFuelCost = (storeId: string) => {
     const store = stores.find(s => s.id === storeId);
-    return store ? store.cpiIndex * 0.03 : 0.03; // Base fuel cost calculation
+    return store ? store.cpiIndex * 0.03 : 0.03;
   };
 
   const handleSearch = () => {
@@ -316,25 +288,32 @@ const TransferSuggestions: React.FC = () => {
   };
 
   const updateTransferStatus = (id: string) => {
-  setTransferStatus(prev => {
-    const current = prev[id];
-    if (!current) return prev;
-
-    const nextStatus =
-      current.status === 'Pending'
-        ? 'In Transit'
-        : current.status === 'In Transit'
-        ? 'Delivered'
-        : 'Delivered';
-
-    return { ...prev, [id]: { ...current, status: nextStatus } };
-  });
-};
-
+    setTransferStatus(prev => {
+      const current = prev[id];
+      if (!current) return prev;
+      const nextStatus =
+        current.status === 'Pending'
+          ? 'In Transit'
+          : current.status === 'In Transit'
+          ? 'Delivered'
+          : 'Delivered';
+      return { ...prev, [id]: { ...current, status: nextStatus } };
+    });
+  };
 
   const exportCSV = () => {
-    const headers = ['ID', 'From', 'To', 'Product', 'Quantity', 'Distance', 'Savings', 'Urgency'];
-    const rows = filteredSuggestions.map(s => [s.id, getStoreName(s.fromStoreId), getStoreName(s.toStoreId), s.productName, s.quantity, s.distance, s.estimatedSavings, s.urgency].join(','));
+    const headers = ['ID', 'Track ID', 'From', 'To', 'Product', 'Quantity', 'Distance', 'Savings', 'Urgency'];
+    const rows = filteredSuggestions.map(s => [
+      s.id,
+      s.trackId,
+      getStoreName(s.fromStoreId),
+      getStoreName(s.toStoreId),
+      s.productName,
+      s.quantity,
+      s.distance,
+      s.estimatedSavings,
+      s.urgency
+    ].join(','));
     const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -345,24 +324,26 @@ const TransferSuggestions: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Add trackId to each suggestion
   const enrichedSuggestions = useMemo(() => transferSuggestions
-  .map(s => {
-    const estimatedSavings = s.estimatedSavings ?? Math.min(s.surplus, s.shortage) * 2;
-    const quantity = Math.min(s.surplus, s.shortage);
-    const fuelCost = s.fuelCost ?? (s.cpiFactor * 0.03); // fallback
-    const co2Impact = s.co2Impact ?? (s.distance * CO2_PER_KM); // fallback
+    .map(s => {
+      const estimatedSavings = s.estimatedSavings ?? Math.min(s.surplus, s.shortage) * 2;
+      const quantity = Math.min(s.surplus, s.shortage);
+      const fuelCost = s.fuelCost ?? (s.cpiFactor * 0.03);
+      const co2Impact = s.co2Impact ?? (s.distance * CO2_PER_KM);
 
-    return {
-      ...s,
-      estimatedSavings,
-      quantity,
-      urgency: s.shortage > 150 ? 'critical' : s.shortage > 100 ? 'high' : s.shortage > 50 ? 'medium' : 'low',
-      costEffectivenessScore: calculateCostEffectiveness(estimatedSavings, fuelCost, co2Impact),
-      fuelCost,
-      co2Impact,
-    };
-  })
-  .filter(s => isValidTransfer(s)), [transferSuggestions]);
+      return {
+        ...s,
+        estimatedSavings,
+        quantity,
+        urgency: s.shortage > 150 ? 'critical' : s.shortage > 100 ? 'high' : s.shortage > 50 ? 'medium' : 'low',
+        costEffectivenessScore: calculateCostEffectiveness(estimatedSavings, fuelCost, co2Impact),
+        fuelCost,
+        co2Impact,
+        trackId: generateTrackId(s.id),
+      };
+    })
+    .filter(s => isValidTransfer(s)), [transferSuggestions]);
 
   const additionalSuggestions = useMemo(() => 
     additionalProducts.map((product, index) => {
@@ -387,10 +368,11 @@ const TransferSuggestions: React.FC = () => {
         surplus: 100,
         shortage: 150,
         cpiFactor,
-        cpiIndex: cpiFactor, // added to maintain consistency
+        cpiIndex: cpiFactor,
         fuelCost,
         co2Impact,
         costEffectivenessScore: calculateCostEffectiveness(estimatedSavings, fuelCost, co2Impact),
+        trackId: generateTrackId(`new-${index}`),
       };
     }).filter(s => isValidTransfer(s)), []
   );
@@ -400,7 +382,6 @@ const TransferSuggestions: React.FC = () => {
     ...additionalSuggestions
   ], [enrichedSuggestions, additionalSuggestions]);
 
-  // Initialize suggestions state
   React.useEffect(() => {
     setSuggestions(allSuggestions);
   }, [allSuggestions]);
@@ -533,50 +514,99 @@ const TransferSuggestions: React.FC = () => {
             >
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <div className="flex-1 space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getUrgencyColor(suggestion.urgency)}`}>
-                      {getUrgencyIcon(suggestion.urgency)}
-                      <span className="capitalize">{suggestion.urgency}</span>
-                    </span>
-                    <span className="text-sm text-gray-300">
-                      Confidence: {(suggestion.confidence * 100).toFixed(0)}%
-                    </span>
-                                         {(isApproved || isRejected) && (
-                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                         isApproved ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-                       }`}>
-                         {isApproved ? 'Approved' : 'Rejected'}
-                       </span>
-                     )}
-                     {isEditing && (
-                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
-                         Editing
-                       </span>
-                     )}
-                     {isApproved && transferStatus[suggestion.id] && (
-  <div className="flex flex-col space-y-2 mt-2">
-    <div className="flex items-center space-x-2">
-      <span className="text-xs text-gray-200">Status:</span>
-      <div className="flex space-x-2">
-        {['Pending', 'In Transit', 'Delivered'].map(stage => (
-          <span
-            key={stage}
-            className={`px-2 py-1 rounded-full text-xs font-medium ${
-              transferStatus[suggestion.id].status === stage
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-400 text-gray-800'
-            }`}
-          >
-            {stage}
-          </span>
-        ))}
-      </div>
-    </div>
-    <div className="text-xs text-gray-200">
-      Shipping: ${transferStatus[suggestion.id].shippingCost} | ETA: {transferStatus[suggestion.id].deliveryTime}
-    </div>
-  </div>
-)}
+                  {/* TOP ROW: Urgency, Confidence, Status Progress Bar */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getUrgencyColor(suggestion.urgency)}`}>
+                        {getUrgencyIcon(suggestion.urgency)}
+                        <span className="capitalize">{suggestion.urgency}</span>
+                      </span>
+                      <span className="text-sm text-gray-300">
+                        Confidence: {(suggestion.confidence * 100).toFixed(0)}%
+                      </span>
+                      {(isApproved || isRejected) && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          isApproved ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                        }`}>
+                          {isApproved ? 'Approved' : 'Rejected'}
+                        </span>
+                      )}
+                      {isEditing && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
+                          Editing
+                        </span>
+                      )}
+                      {isApproved && transferStatus[suggestion.id] && (
+                        <div className="flex flex-col mt-2">
+                          <div className="flex items-center space-x-4 mb-1">
+                            {/* Status Progress Bar */}
+                            {['Pending', 'In Transit', 'Delivered'].map((stage, idx) => {
+                              const currentStatus = transferStatus[suggestion.id].status;
+                              const isActive = (
+                                (stage === 'Pending' && currentStatus === 'Pending') ||
+                                (stage === 'In Transit' && currentStatus === 'In Transit') ||
+                                (stage === 'Delivered' && currentStatus === 'Delivered')
+                              );
+                              const isCompleted = (
+                                (stage === 'Pending') ||
+                                (stage === 'In Transit' && (currentStatus === 'In Transit' || currentStatus === 'Delivered')) ||
+                                (stage === 'Delivered' && currentStatus === 'Delivered')
+                              );
+                              return (
+                                <React.Fragment key={stage}>
+                                  <div className="flex flex-col items-center">
+                                    <div
+                                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center
+                                        ${isCompleted ? 'bg-green-600 border-green-700' : 'bg-gray-300 border-gray-400'}
+                                      `}
+                                    >
+                                      {isCompleted ? (
+                                        <CheckCircle className="w-3 h-3 text-white" />
+                                      ) : (
+                                        <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                                      )}
+                                    </div>
+                                    <span className={`text-xs mt-1 ${isActive ? 'text-green-700 font-semibold' : 'text-gray-400'}`}>
+                                      {stage}
+                                    </span>
+                                  </div>
+                                  {idx < 2 && (
+                                    <div className={`w-8 h-1 ${isCompleted ? 'bg-green-600' : 'bg-gray-300'} mx-1 rounded`}></div>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {/* Track ID and Shipping/ETA inline with confidence */}
+                    <div className="flex flex-col items-end justify-end ml-4">
+                      <span
+                        className="font-semibold"
+                        style={{
+                          fontSize: '1rem', // 5% larger than base (was 0.95rem)
+                          color: '#9ca3af',
+                          marginRight: '0.25rem'
+                        }}
+                      >
+                        Track ID:
+                      </span>
+                      <span
+                        className="font-bold"
+                        style={{
+                          fontSize: '1rem', // 5% larger than base (was 0.95rem)
+                          color: 'white',
+                        }}
+                      >
+                        {suggestion.trackId}
+                      </span>
+                      {isApproved && transferStatus[suggestion.id] && (
+                        <span className="text-xs text-gray-200 mt-1">
+                          Shipping: ${transferStatus[suggestion.id].shippingCost} | ETA: {transferStatus[suggestion.id].deliveryTime}
+                        </span>
+                      )}
+                    </div>
                   </div>
               
                   <div className="flex items-center space-x-4">
@@ -593,110 +623,105 @@ const TransferSuggestions: React.FC = () => {
 
                   <div className="bg-gray-100/80 rounded-lg p-3">
                     <h4 className="font-medium text-black mb-1">{suggestion.productName}</h4>
-                    
-                                         {isEditing ? (
-                       <div className="space-y-3">
-                         <div>
-                           <label className="block text-sm font-medium text-gray-800 mb-1">Source Store</label>
-                           <select
-                             value={editForm.fromStoreId}
-                             onChange={(e) => setEditForm({...editForm, fromStoreId: e.target.value})}
-                             className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-white text-gray-900 ${
-                               editForm.fromStoreId === editForm.toStoreId && editForm.fromStoreId !== '' 
-                                 ? 'border-red-500' 
-                                 : 'border-gray-300'
-                             }`}
-                           >
-                             <option value="">Select source store</option>
-                             {stores.map(store => (
-                               <option key={store.id} value={store.id} disabled={store.id === editForm.toStoreId}>
-                                 {store.name} {store.id === editForm.toStoreId ? '(Same as destination)' : ''}
-                               </option>
-                             ))}
-                           </select>
-                           {editForm.fromStoreId === editForm.toStoreId && editForm.fromStoreId !== '' && (
-                             <p className="text-xs text-red-600 mt-1">Source and destination cannot be the same</p>
-                           )}
-                         </div>
-                         
-                         <div>
-                           <label className="block text-sm font-medium text-gray-800 mb-1">Destination Store</label>
-                           <select
-                             value={editForm.toStoreId}
-                             onChange={(e) => setEditForm({...editForm, toStoreId: e.target.value})}
-                             className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-white text-gray-900 ${
-                               editForm.fromStoreId === editForm.toStoreId && editForm.toStoreId !== '' 
-                                 ? 'border-red-500' 
-                                 : 'border-gray-300'
-                             }`}
-                           >
-                             <option value="">Select destination store</option>
-                             {stores.map(store => (
-                               <option key={store.id} value={store.id} disabled={store.id === editForm.fromStoreId}>
-                                 {store.name} {store.id === editForm.fromStoreId ? '(Same as source)' : ''}
-                               </option>
-                             ))}
-                           </select>
-                           {editForm.fromStoreId === editForm.toStoreId && editForm.toStoreId !== '' && (
-                             <p className="text-xs text-red-600 mt-1">Source and destination cannot be the same</p>
-                           )}
-                         </div>
-                         
-                         <div>
-                           <label className="block text-sm font-medium text-gray-800 mb-1">Quantity</label>
-                           <input
-                             type="number"
-                             value={editForm.quantity}
-                             onChange={(e) => setEditForm({...editForm, quantity: parseInt(e.target.value) || 0})}
-                             min="1"
-                             max={suggestion.surplus}
-                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-white text-gray-900"
-                           />
-                           <p className="text-xs text-gray-600 mt-1">Max available: {suggestion.surplus} units</p>
-                         </div>
-                         
-                         <div>
-                           <label className="block text-sm font-medium text-gray-800 mb-1">Reason</label>
-                           <textarea
-                             value={editForm.reason}
-                             onChange={(e) => setEditForm({...editForm, reason: e.target.value})}
-                             rows={2}
-                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-white text-gray-900"
-                             placeholder="Enter reason for transfer..."
-                           />
-                         </div>
-                         
-                         {/* Real-time preview of updated metrics */}
-                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                           <h5 className="text-sm font-medium text-blue-800 mb-2">Updated Metrics Preview:</h5>
-                           <div className="grid grid-cols-2 gap-2 text-xs">
-                             <div>
-                               <span className="text-blue-700">New Distance:</span>
-                               <span className="text-blue-900 font-semibold ml-1">
-                                 {calculateDistance(editForm.fromStoreId, editForm.toStoreId).toFixed(1)} mi
-                               </span>
-                             </div>
-                             <div>
-                               <span className="text-blue-700">New Savings:</span>
-                               <span className="text-green-700 font-semibold ml-1">
-                                 ${Math.min(suggestion.surplus, editForm.quantity) * 2}
-                               </span>
-                             </div>
-                             <div>
-                               <span className="text-blue-700">Fuel Cost:</span>
-                               <span className="text-blue-900 font-semibold ml-1">
-                                 ${calculateFuelCost(editForm.toStoreId).toFixed(2)}
-                               </span>
-                             </div>
-                             <div>
-                               <span className="text-blue-700">CO₂ Impact:</span>
-                               <span className="text-blue-900 font-semibold ml-1">
-                                 {(calculateDistance(editForm.fromStoreId, editForm.toStoreId) * CO2_PER_KM).toFixed(2)} kg
-                               </span>
-                             </div>
-                           </div>
-                         </div>
-                       </div>
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        {/* ...existing edit form code... */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-800 mb-1">Source Store</label>
+                          <select
+                            value={editForm.fromStoreId}
+                            onChange={(e) => setEditForm({...editForm, fromStoreId: e.target.value})}
+                            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-[#f8f8f3] text-gray-900 ${
+                              editForm.fromStoreId === editForm.toStoreId && editForm.fromStoreId !== '' 
+                                ? 'border-red-500' 
+                                : 'border-gray-300'
+                            }`}
+                          >
+                            <option value="">Select source store</option>
+                            {stores.map(store => (
+                              <option key={store.id} value={store.id} disabled={store.id === editForm.toStoreId}>
+                                {store.name} {store.id === editForm.toStoreId ? '(Same as destination)' : ''}
+                              </option>
+                            ))}
+                          </select>
+                          {editForm.fromStoreId === editForm.toStoreId && editForm.fromStoreId !== '' && (
+                            <p className="text-xs text-red-600 mt-1">Source and destination cannot be the same</p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-800 mb-1">Destination Store</label>
+                          <select
+                            value={editForm.toStoreId}
+                            onChange={(e) => setEditForm({...editForm, toStoreId: e.target.value})}
+                            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-[#f8f8f3] text-gray-900 ${
+                              editForm.fromStoreId === editForm.toStoreId && editForm.toStoreId !== '' 
+                                ? 'border-red-500' 
+                                : 'border-gray-300'
+                            }`}
+                          >
+                            <option value="">Select destination store</option>
+                            {stores.map(store => (
+                              <option key={store.id} value={store.id} disabled={store.id === editForm.fromStoreId}>
+                                {store.name} {store.id === editForm.fromStoreId ? '(Same as source)' : ''}
+                              </option>
+                            ))}
+                          </select>
+                          {editForm.fromStoreId === editForm.toStoreId && editForm.toStoreId !== '' && (
+                            <p className="text-xs text-red-600 mt-1">Source and destination cannot be the same</p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-800 mb-1">Quantity</label>
+                          <input
+                            type="number"
+                            value={editForm.quantity}
+                            onChange={(e) => setEditForm({...editForm, quantity: parseInt(e.target.value) || 0})}
+                            min="1"
+                            max={suggestion.surplus}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-[#f8f8f3] text-gray-900"
+                          />
+                          <p className="text-xs text-gray-600 mt-1">Max available: {suggestion.surplus} units</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-800 mb-1">Reason</label>
+                          <textarea
+                            value={editForm.reason}
+                            onChange={(e) => setEditForm({...editForm, reason: e.target.value})}
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#043980] focus:border-transparent bg-[#f8f8f3] text-gray-900"
+                            placeholder="Enter reason for transfer..."
+                          />
+                        </div>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <h5 className="text-sm font-medium text-blue-800 mb-2">Updated Metrics Preview:</h5>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <span className="text-blue-700">New Distance:</span>
+                              <span className="text-blue-900 font-semibold ml-1">
+                                {calculateDistance(editForm.fromStoreId, editForm.toStoreId).toFixed(1)} mi
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-blue-700">New Savings:</span>
+                              <span className="text-green-700 font-semibold ml-1">
+                                ${Math.min(suggestion.surplus, editForm.quantity) * 2}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-blue-700">Fuel Cost:</span>
+                              <span className="text-blue-900 font-semibold ml-1">
+                                ${calculateFuelCost(editForm.toStoreId).toFixed(2)}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-blue-700">CO₂ Impact:</span>
+                              <span className="text-blue-900 font-semibold ml-1">
+                                {(calculateDistance(editForm.fromStoreId, editForm.toStoreId) * CO2_PER_KM).toFixed(2)} kg
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     ) : (
                       <>
                         <p className="text-sm text-gray-500 mb-2">{suggestion.reason}</p>
@@ -771,8 +796,6 @@ const TransferSuggestions: React.FC = () => {
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
-                        
-
                           <button
                             onClick={() => handleApprove(suggestion.id)}
                             disabled={isEditing}
@@ -800,14 +823,13 @@ const TransferSuggestions: React.FC = () => {
                             <span>Reject</span>
                           </button>
                           {isRejected && (
-        <p className="text-xs text-red-300 mt-1">
-          Why was this transfer rejected?
-        </p>
-      )}
+                            <p className="text-xs text-red-300 mt-1">
+                              Why was this transfer rejected?
+                            </p>
+                          )}
                         </>
                       )}
                     </>
-                    
                   )}
                 </div>
               </div>
@@ -820,7 +842,7 @@ const TransferSuggestions: React.FC = () => {
         <div className="text-center py-12">
           <Clock className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">No transfers found</h3>
-          <p className="text-gray-400">Try adjusting your filter or search</p>
+          <p className="text-gray-400">Try adjusting your filters or search terms.</p>
         </div>
       )}
     </div>
