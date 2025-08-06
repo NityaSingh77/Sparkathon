@@ -19,6 +19,8 @@ const SURPLUS_THRESHOLD = 40;
 const SHORTAGE_THRESHOLD = 30;
 const CO2_PER_KM = 0.02; // kg CO₂/km
 
+
+
 const calculateCostEffectiveness = (savings: number, fuelCost: number, co2Impact: number) => {
   const totalCost = fuelCost + co2Impact;
   return savings - totalCost;
@@ -77,100 +79,123 @@ const TransferSuggestions: React.FC = () => {
 
   const getUrgencyIcon = (urgency: string) => urgency === 'critical' ? <AlertCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />;
 
-  const handleApprove = async (id: string) => {
-    if (editingId === id) {
-      addNotification({
-        type: 'reject',
-        message: 'Please save or cancel your edits before approving this suggestion.'
-      });
-      return;
+const handleApprove = async (id: string) => {
+  if (editingId === id) {
+    addNotification({
+      type: 'reject',
+      message: 'Please save or cancel your edits before approving this suggestion.'
+    });
+    return;
+  }
+
+  const trackId = generateTrackId(id); // Generate only here
+
+  setApprovedTransfers([...approvedTransfers, id]);
+  setRejectedTransfers(rejectedTransfers.filter(r => r !== id));
+
+  setTransferStatus(prev => ({
+    ...prev,
+    [id]: {
+      status: 'Pending',
+      trackId, // Store Track ID here
+      shippingCost: parseFloat((Math.random() * 100 + 20).toFixed(2)),
+      deliveryTime: `${Math.floor(Math.random() * 3) + 1} days`
     }
+  }));
 
-    setApprovedTransfers([...approvedTransfers, id]);
-    setRejectedTransfers(rejectedTransfers.filter(r => r !== id));
+  const suggestion = suggestions.find(s => s.id === id);
+  if (suggestion) {
+    const fromStore = getStoreName(suggestion.fromStoreId);
+    const toStore = getStoreName(suggestion.toStoreId);
 
-    // Initialize transfer tracking
-    setTransferStatus(prev => ({
-      ...prev,
-      [id]: {
-        status: 'Pending',
-        shippingCost: parseFloat((Math.random() * 100 + 20).toFixed(2)),
-        deliveryTime: `${Math.floor(Math.random() * 3) + 1} days`
-      }
-    }));
+    addNotification({
+      type: 'approve',
+      message: `Distribution from ${fromStore} to ${toStore} has been approved.`
+    });
 
-    // Get store details for notifications/emails
-    const suggestion = suggestions.find(s => s.id === id);
-    if (suggestion) {
-      const fromStore = getStoreName(suggestion.fromStoreId);
-      const toStore = getStoreName(suggestion.toStoreId);
-
-      addNotification({
-        type: 'approve',
-        message: `Distribution from ${fromStore} to ${toStore} has been approved.`
-      });
-
-      try {
-        const suggestionData: SuggestionData = {
-          id: suggestion.id,
-          fromStoreId: suggestion.fromStoreId,
-          toStoreId: suggestion.toStoreId,
-          productName: suggestion.productName,
-          quantity: suggestion.quantity,
-          reason: suggestion.reason,
-          estimatedSavings: suggestion.estimatedSavings,
-          fromStore,
-          toStore
-        };
-        await sendApprovalEmail(suggestionData, user?.username || 'Unknown User');
-      } catch (error) {
-        console.error('Error sending approval email:', error);
-      }
+    try {
+      const suggestionData: SuggestionData = {
+        id: suggestion.id,
+        fromStoreId: suggestion.fromStoreId,
+        toStoreId: suggestion.toStoreId,
+        productName: suggestion.productName,
+        quantity: suggestion.quantity,
+        reason: suggestion.reason,
+        estimatedSavings: suggestion.estimatedSavings,
+        fromStore,
+        toStore
+      };
+      await sendApprovalEmail(suggestionData, user?.username || 'Unknown User');
+    } catch (error) {
+      console.error('Error sending approval email:', error);
     }
-  };
+  }
+};
+const [showRejectionModal, setShowRejectionModal] = useState(false);
+const [rejectionReason, setRejectionReason] = useState('');
+const [currentRejectId, setCurrentRejectId] = useState<string | null>(null);
+const confirmRejection = async () => {
+  if (!currentRejectId || !rejectionReason) return;
 
-  const handleReject = async (id: string) => {
-    setRejectedTransfers([...rejectedTransfers, id]);
-    setApprovedTransfers(approvedTransfers.filter(a => a !== id));
-    if (editingId === id) {
-      addNotification({
-        type: 'reject',
-        message: 'Please save or cancel your edits before rejecting this suggestion.'
-      });
-      return;
+  // Update state
+  setRejectedTransfers([...rejectedTransfers, currentRejectId]);
+  setApprovedTransfers(approvedTransfers.filter(a => a !== currentRejectId));
+
+  // Find suggestion details
+  const suggestion = suggestions.find(s => s.id === currentRejectId);
+  if (suggestion) {
+    const fromStore = getStoreName(suggestion.fromStoreId);
+    const toStore = getStoreName(suggestion.toStoreId);
+
+    // Notification with reason
+    addNotification({
+      type: 'reject',
+      message: `Distribution from ${fromStore} to ${toStore} was rejected. Reason: ${rejectionReason}`
+    });
+
+    // Send email
+    try {
+      const suggestionData: SuggestionData = {
+        id: suggestion.id,
+        fromStoreId: suggestion.fromStoreId,
+        toStoreId: suggestion.toStoreId,
+        productName: suggestion.productName,
+        quantity: suggestion.quantity,
+        reason: suggestion.reason,
+        estimatedSavings: suggestion.estimatedSavings,
+        fromStore,
+        toStore
+      };
+      await sendRejectionEmail(suggestionData, user?.username || 'Unknown User');
+    } catch (error) {
+      console.error('Error sending rejection email:', error);
     }
+  }
 
-    setRejectedTransfers([...rejectedTransfers, id]);
-    setApprovedTransfers(approvedTransfers.filter(a => a !== id));
-    
-    const suggestion = suggestions.find(s => s.id === id);
-    if (suggestion) {
-      const fromStore = getStoreName(suggestion.fromStoreId);
-      const toStore = getStoreName(suggestion.toStoreId);
-      addNotification({
-        type: 'reject',
-        message: `Distribution from ${fromStore} to ${toStore} has been rejected.`
-      });
+  // Reset modal
+  setShowRejectionModal(false);
+  setRejectionReason('');
+  setCurrentRejectId(null);
 
-      try {
-        const suggestionData: SuggestionData = {
-          id: suggestion.id,
-          fromStoreId: suggestion.fromStoreId,
-          toStoreId: suggestion.toStoreId,
-          productName: suggestion.productName,
-          quantity: suggestion.quantity,
-          reason: suggestion.reason,
-          estimatedSavings: suggestion.estimatedSavings,
-          fromStore,
-          toStore
-        };
+  // Simple feedback to user
+  alert('Thank you for your feedback!');
+};
 
-        await sendRejectionEmail(suggestionData, user?.username || 'Unknown User');
-      } catch (error) {
-        console.error('Error sending rejection email:', error);
-      }
-    }
-  };
+
+  const handleReject = (id: string) => {
+  if (editingId === id) {
+    addNotification({
+      type: 'reject',
+      message: 'Please save or cancel your edits before rejecting this suggestion.'
+    });
+    return;
+  }
+
+  // Open the modal instead of rejecting immediately
+  setCurrentRejectId(id);
+  setShowRejectionModal(true);
+};
+
 
   const handleEdit = (suggestion: any) => {
     setEditingId(suggestion.id);
@@ -537,9 +562,9 @@ const TransferSuggestions: React.FC = () => {
                         </span>
                       )}
                       {isApproved && transferStatus[suggestion.id] && (
-                        <div className="flex flex-col mt-2">
+                        <div className="flex flex-col mt-2 pl-10">
                           <div className="flex items-center space-x-4 mb-1">
-                            {/* Status Progress Bar */}
+                            
                             {['Pending', 'In Transit', 'Delivered'].map((stage, idx) => {
                               const currentStatus = transferStatus[suggestion.id].status;
                               const isActive = (
@@ -557,7 +582,7 @@ const TransferSuggestions: React.FC = () => {
                                   <div className="flex flex-col items-center">
                                     <div
                                       className={`w-4 h-4 rounded-full border-2 flex items-center justify-center
-                                        ${isCompleted ? 'bg-green-600 border-green-700' : 'bg-gray-300 border-gray-400'}
+                                        ${isCompleted ? 'bg-green-600 border-green-500' : 'bg-gray-300 border-gray-400'}
                                       `}
                                     >
                                       {isCompleted ? (
@@ -566,7 +591,7 @@ const TransferSuggestions: React.FC = () => {
                                         <span className="w-2 h-2 rounded-full bg-gray-400"></span>
                                       )}
                                     </div>
-                                    <span className={`text-xs mt-1 ${isActive ? 'text-green-700 font-semibold' : 'text-gray-400'}`}>
+                                    <span className={`text-xs mt-1 ${isActive ? 'text-green-500 font-semibold' : 'text-gray-400'}`}>
                                       {stage}
                                     </span>
                                   </div>
@@ -582,28 +607,21 @@ const TransferSuggestions: React.FC = () => {
                     </div>
                     {/* Track ID and Shipping/ETA inline with confidence */}
                     <div className="flex flex-col items-end justify-end ml-4">
+                      {isApproved && (
                       <span
-                        className="font-semibold"
+                        className="text-sm text-gray-100/80"
                         style={{
-                          fontSize: '1rem', // 5% larger than base (was 0.95rem)
-                          color: '#9ca3af',
+                          
                           marginRight: '0.25rem'
                         }}
                       >
-                        Track ID:
-                      </span>
-                      <span
-                        className="font-bold"
-                        style={{
-                          fontSize: '1rem', // 5% larger than base (was 0.95rem)
-                          color: 'white',
-                        }}
-                      >
-                        {suggestion.trackId}
-                      </span>
+                        Track ID: <span
+                        className="text-white"
+                      >{suggestion.trackId}</span>
+                      </span> )}
                       {isApproved && transferStatus[suggestion.id] && (
-                        <span className="text-xs text-gray-200 mt-1">
-                          Shipping: ${transferStatus[suggestion.id].shippingCost} | ETA: {transferStatus[suggestion.id].deliveryTime}
+                        <span className="text-xs text-gray-100/80 mt-1">
+                          Shipping: <span className="text-white">${transferStatus[suggestion.id].shippingCost}</span> | ETA: <span className="text-white">{transferStatus[suggestion.id].deliveryTime}</span>
                         </span>
                       )}
                     </div>
@@ -692,30 +710,30 @@ const TransferSuggestions: React.FC = () => {
                             placeholder="Enter reason for transfer..."
                           />
                         </div>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <h5 className="text-sm font-medium text-blue-800 mb-2">Updated Metrics Preview:</h5>
+                        <div className="bg-gray-100/80 border border-blue-200 rounded-lg p-3">
+                          <h5 className="text-sm font-medium text-black mb-2">Updated Metrics Preview:</h5>
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div>
-                              <span className="text-blue-700">New Distance:</span>
-                              <span className="text-blue-900 font-semibold ml-1">
+                              <span className="text-black">New Distance:</span>
+                              <span className="text-black font-semibold ml-1">
                                 {calculateDistance(editForm.fromStoreId, editForm.toStoreId).toFixed(1)} mi
                               </span>
                             </div>
                             <div>
-                              <span className="text-blue-700">New Savings:</span>
+                              <span className="text-black">New Savings:</span>
                               <span className="text-green-700 font-semibold ml-1">
                                 ${Math.min(suggestion.surplus, editForm.quantity) * 2}
                               </span>
                             </div>
                             <div>
-                              <span className="text-blue-700">Fuel Cost:</span>
-                              <span className="text-blue-900 font-semibold ml-1">
+                              <span className="text-black">Fuel Cost:</span>
+                              <span className="text-black font-semibold ml-1">
                                 ${calculateFuelCost(editForm.toStoreId).toFixed(2)}
                               </span>
                             </div>
                             <div>
-                              <span className="text-blue-700">CO₂ Impact:</span>
-                              <span className="text-blue-900 font-semibold ml-1">
+                              <span className="text-black">CO₂ Impact:</span>
+                              <span className="text-black font-semibold ml-1">
                                 {(calculateDistance(editForm.fromStoreId, editForm.toStoreId) * CO2_PER_KM).toFixed(2)} kg
                               </span>
                             </div>
@@ -839,12 +857,46 @@ const TransferSuggestions: React.FC = () => {
       </div>
 
       {filteredSuggestions.length === 0 && (
-        <div className="text-center py-12">
-          <Clock className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No transfers found</h3>
+        <div className="text-center py-12 text-black">
+          <Clock className="w-16 h-16 text-black mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-black mb-2">No transfers found</h3>
           <p className="text-gray-400">Try adjusting your filters or search terms.</p>
         </div>
       )}
+      {showRejectionModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg w-96 border border-[#043980]">
+      <h3 className="text-lg font-semibold mb-3 text-[#043980]">Reason for Rejection</h3>
+      <select
+        value={rejectionReason}
+        onChange={(e) => setRejectionReason(e.target.value)}
+        className="w-full border border-2-[#043980] p-2 rounded mb-3 text-black"
+      >
+        <option value="">Select a reason</option>
+        <option value="Cost too high">Cost too high</option>
+        <option value="Not needed">Not needed</option>
+        <option value="Better alternative available">Better alternative available</option>
+        <option value="Other">Other</option>
+      </select>
+      <div className="flex justify-end space-x-2">
+        <button
+          onClick={() => setShowRejectionModal(false)}
+          className="px-4 py-2 bg-gray-700 rounded-full"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={confirmRejection}
+          disabled={!rejectionReason}
+          className="px-4 py-2 bg-red-700 text-white rounded-full disabled:opacity-50"
+        >
+          Submit
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
