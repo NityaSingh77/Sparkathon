@@ -109,14 +109,9 @@ python app.py
 ## 🤝 Contributors  
 
 - Nitya Singh  
-- Team Members  
-
----
-
-## 📬 Contact  
-
-📧 nityasingh.ind@gmail.com  
-🔗 LinkedIn | GitHub  
+- Priyanshi Mehta
+- Divyansh Vijay
+- Vraj Vaghela
 
 ---
 
